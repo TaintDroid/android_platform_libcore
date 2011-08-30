@@ -477,8 +477,10 @@ static jint OSNetworkSystem_writeDirect(JNIEnv* env, jobject,
     return bytesSent;
 }
 
-static jint OSNetworkSystem_write(JNIEnv* env, jobject,
+// begin WITH_TAINT_TRACKING
+static jint OSNetworkSystem_writeImpl(JNIEnv* env, jobject,
         jobject fileDescriptor, jbyteArray byteArray, jint offset, jint count) {
+// end WITH_TAINT_TRACKING
     ScopedByteArrayRW bytes(env, byteArray);
     if (bytes.get() == NULL) {
         return -1;
@@ -488,7 +490,9 @@ static jint OSNetworkSystem_write(JNIEnv* env, jobject,
     return result;
 }
 
-static jboolean OSNetworkSystem_connectNonBlocking(JNIEnv* env, jobject, jobject fileDescriptor, jobject inetAddr, jint port) {
+// begin WITH_TAINT_TRACKING
+static jboolean OSNetworkSystem_connectNonBlockingImpl(JNIEnv* env, jobject, jobject fileDescriptor, jobject inetAddr, jint port) {
+// end WITH_TAINT_TRACKING
     NetFd fd(env, fileDescriptor);
     if (fd.isClosed()) {
         return JNI_FALSE;
@@ -519,8 +523,10 @@ static jboolean OSNetworkSystem_isConnected(JNIEnv* env, jobject, jobject fileDe
 }
 
 // TODO: move this into Java, using connectNonBlocking and isConnected!
-static void OSNetworkSystem_connect(JNIEnv* env, jobject, jobject fileDescriptor,
+// begin WITH_TAINT_TRACKING
+static void OSNetworkSystem_connectImpl(JNIEnv* env, jobject, jobject fileDescriptor,
         jobject inetAddr, jint port, jint timeout) {
+// end WITH_TAINT_TRACKING
 
     /* if a timeout was specified calculate the finish time value */
     bool hasTimeout = timeout > 0;
@@ -672,8 +678,10 @@ static void OSNetworkSystem_accept(JNIEnv* env, jobject, jobject serverFileDescr
     jniSetFileDescriptorOfFD(env, clientFileDescriptor, clientFd);
 }
 
-static void OSNetworkSystem_sendUrgentData(JNIEnv* env, jobject,
+// begin WITH_TAINT_TRACKING
+static void OSNetworkSystem_sendUrgentDataImpl(JNIEnv* env, jobject,
         jobject fileDescriptor, jbyte value) {
+// end WITH_TAINT_TRACKING
     NetFd fd(env, fileDescriptor);
     if (fd.isClosed()) {
         return;
@@ -860,9 +868,11 @@ static jint OSNetworkSystem_sendDirect(JNIEnv* env, jobject, jobject fileDescrip
     return bytesSent;
 }
 
-static jint OSNetworkSystem_send(JNIEnv* env, jobject, jobject fd,
+// begin WITH_TAINT_TRACKING
+static jint OSNetworkSystem_sendImpl(JNIEnv* env, jobject, jobject fd,
         jbyteArray data, jint offset, jint length,
         jint port, jobject inetAddress) {
+// end WITH_TAINT_TRACKING
     ScopedByteArrayRO bytes(env, data);
     if (bytes.get() == NULL) {
         return -1;
@@ -1341,8 +1351,10 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(OSNetworkSystem, accept, "(Ljava/io/FileDescriptor;Ljava/net/SocketImpl;Ljava/io/FileDescriptor;)V"),
     NATIVE_METHOD(OSNetworkSystem, bind, "(Ljava/io/FileDescriptor;Ljava/net/InetAddress;I)V"),
     NATIVE_METHOD(OSNetworkSystem, close, "(Ljava/io/FileDescriptor;)V"),
-    NATIVE_METHOD(OSNetworkSystem, connectNonBlocking, "(Ljava/io/FileDescriptor;Ljava/net/InetAddress;I)Z"),
-    NATIVE_METHOD(OSNetworkSystem, connect, "(Ljava/io/FileDescriptor;Ljava/net/InetAddress;II)V"),
+    // begin WITH_TAINT_TRACKING
+    NATIVE_METHOD(OSNetworkSystem, connectNonBlockingImpl, "(Ljava/io/FileDescriptor;Ljava/net/InetAddress;I)Z"),
+    NATIVE_METHOD(OSNetworkSystem, connectImpl, "(Ljava/io/FileDescriptor;Ljava/net/InetAddress;II)V"),
+    // end WITH_TAINT_TRACKING
     NATIVE_METHOD(OSNetworkSystem, disconnectDatagram, "(Ljava/io/FileDescriptor;)V"),
     NATIVE_METHOD(OSNetworkSystem, getSocketLocalAddress, "(Ljava/io/FileDescriptor;)Ljava/net/InetAddress;"),
     NATIVE_METHOD(OSNetworkSystem, getSocketLocalPort, "(Ljava/io/FileDescriptor;)I"),
@@ -1354,15 +1366,21 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(OSNetworkSystem, recv, "(Ljava/io/FileDescriptor;Ljava/net/DatagramPacket;[BIIZZ)I"),
     NATIVE_METHOD(OSNetworkSystem, recvDirect, "(Ljava/io/FileDescriptor;Ljava/net/DatagramPacket;IIIZZ)I"),
     NATIVE_METHOD(OSNetworkSystem, selectImpl, "([Ljava/io/FileDescriptor;[Ljava/io/FileDescriptor;II[IJ)Z"),
-    NATIVE_METHOD(OSNetworkSystem, send, "(Ljava/io/FileDescriptor;[BIIILjava/net/InetAddress;)I"),
+    // begin WITH_TAINT_TRACKING
+    NATIVE_METHOD(OSNetworkSystem, sendImpl, "(Ljava/io/FileDescriptor;[BIIILjava/net/InetAddress;)I"),
+    // end WITH_TAINT_TRACKING
     NATIVE_METHOD(OSNetworkSystem, sendDirect, "(Ljava/io/FileDescriptor;IIIILjava/net/InetAddress;)I"),
-    NATIVE_METHOD(OSNetworkSystem, sendUrgentData, "(Ljava/io/FileDescriptor;B)V"),
+    // begin WITH_TAINT_TRACKING
+    NATIVE_METHOD(OSNetworkSystem, sendUrgentDataImpl, "(Ljava/io/FileDescriptor;B)V"),
+    // end WITH_TAINT_TRACKING
     NATIVE_METHOD(OSNetworkSystem, setInetAddress, "(Ljava/net/InetAddress;[B)V"),
     NATIVE_METHOD(OSNetworkSystem, setSocketOption, "(Ljava/io/FileDescriptor;ILjava/lang/Object;)V"),
     NATIVE_METHOD(OSNetworkSystem, shutdownInput, "(Ljava/io/FileDescriptor;)V"),
     NATIVE_METHOD(OSNetworkSystem, shutdownOutput, "(Ljava/io/FileDescriptor;)V"),
     NATIVE_METHOD(OSNetworkSystem, socket, "(Ljava/io/FileDescriptor;Z)V"),
-    NATIVE_METHOD(OSNetworkSystem, write, "(Ljava/io/FileDescriptor;[BII)I"),
+    // begin WITH_TAINT_TRACKING
+    NATIVE_METHOD(OSNetworkSystem, writeImpl, "(Ljava/io/FileDescriptor;[BII)I"),
+    // end WITH_TAINT_TRACKING
     NATIVE_METHOD(OSNetworkSystem, writeDirect, "(Ljava/io/FileDescriptor;III)I"),
 };
 

@@ -268,6 +268,11 @@ LOCAL_MODULE_TAGS := tests
 LOCAL_MODULE := run-core-tests-on-ri
 include $(BUILD_PREBUILT)
 
+# turn on taint tracking
+ifeq ($(WITH_TAINT_TRACKING),true)
+    LOCAL_CFLAGS += -DWITH_TAINT_TRACKING
+endif
+
 
 #
 # Build for the host.

@@ -39,6 +39,9 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSession;
 import javax.security.auth.x500.X500Principal;
 import org.apache.harmony.security.provider.cert.X509CertImpl;
+// begin WITH_TAINT_TRACKING
+import dalvik.system.Taint;
+// end WITH_TAINT_TRACKING
 
 /**
  * Implementation of the class OpenSSLSocketImpl based on OpenSSL.
@@ -814,6 +817,17 @@ public class OpenSSLSocketImpl
             BlockGuard.getThreadPolicy().onNetwork();
             synchronized (writeLock) {
                 checkOpen();
+                // begin WITH_TAINT_TRACKING
+        		int tag = Taint.getTaintInt(b);
+        		if (tag != Taint.TAINT_CLEAR) {
+        			String dstr = String.valueOf(b);
+        			String addr = (fd.hasName) ? fd.name : "unknown";
+        			String tstr = "0x" + Integer.toHexString(tag);
+        			Taint.log("SSLOutputStream.write(" + addr
+        					+ ") received data with tag " + tstr + " data=[" + dstr
+        					+ "]");
+        		}
+        		// end WITH_TAINT_TRACKING
                 NativeCrypto.SSL_write_byte(sslNativePointer, fd, OpenSSLSocketImpl.this, b);
             }
         }
@@ -836,6 +850,17 @@ public class OpenSSLSocketImpl
                 if (len == 0) {
                     return;
                 }
+                // begin WITH_TAINT_TRACKING
+        		int tag = Taint.getTaintByteArray(b);
+        		if (tag != Taint.TAINT_CLEAR) {
+        			String dstr = new String(b);
+        			String addr = (fd.hasName) ? fd.name : "unknown";
+        			String tstr = "0x" + Integer.toHexString(tag);
+        			Taint.log("SSLOutputStream.write(" + addr
+        					+ ") received data with tag " + tstr + " data=[" + dstr
+        					+ "]");
+        		}
+        		// end WITH_TAINT_TRACKING
                 NativeCrypto.SSL_write(sslNativePointer, fd, OpenSSLSocketImpl.this, b, start, len);
             }
         }

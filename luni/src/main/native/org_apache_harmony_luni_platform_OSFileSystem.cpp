@@ -287,8 +287,10 @@ static jlong OSFileSystem_readDirect(JNIEnv* env, jobject, jint fd,
     return rc;
 }
 
-static jlong OSFileSystem_read(JNIEnv* env, jobject, jint fd,
+// begin WITH_TAINT_TRACKING
+static jlong OSFileSystem_readImpl(JNIEnv* env, jobject, jint fd,
         jbyteArray byteArray, jint offset, jint byteCount) {
+// end WITH_TAINT_TRACKING
     ScopedByteArrayRW bytes(env, byteArray);
     if (bytes.get() == NULL) {
         return 0;
@@ -310,8 +312,10 @@ static jlong OSFileSystem_writeDirect(JNIEnv* env, jobject, jint fd,
     return rc;
 }
 
-static jlong OSFileSystem_write(JNIEnv* env, jobject, jint fd,
+// begin WITH_TAINT_TRACKING
+static jlong OSFileSystem_writeImpl(JNIEnv* env, jobject, jint fd,
         jbyteArray byteArray, jint offset, jint byteCount) {
+// end WITH_TAINT_TRACKING
     ScopedByteArrayRO bytes(env, byteArray);
     if (bytes.get() == NULL) {
         return 0;
@@ -408,6 +412,14 @@ static jint OSFileSystem_open(JNIEnv* env, jobject, jstring javaPath, jint jflag
     if (path.c_str() == NULL) {
         return -1;
     }
+
+#ifdef WITH_TAINT_TRACKING
+    // Ensure /sdcard always acts like FAT, even if it is ext2
+    if (strncmp(path.c_str(), "/sdcard/", 8) == 0) {
+    	mode = 0777;
+    }
+#endif
+
     jint rc = TEMP_FAILURE_RETRY(open(path.c_str(), flags, mode));
     if (rc == -1) {
         // Get the human-readable form of errno.
@@ -492,14 +504,18 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(OSFileSystem, length, "(I)J"),
     NATIVE_METHOD(OSFileSystem, lockImpl, "(IJJIZ)I"),
     NATIVE_METHOD(OSFileSystem, open, "(Ljava/lang/String;I)I"),
-    NATIVE_METHOD(OSFileSystem, read, "(I[BII)J"),
+    // begin WITH_TAINT_TRACKING
+    NATIVE_METHOD(OSFileSystem, readImpl, "(I[BII)J"),
+    // end WITH_TAINT_TRACKING
     NATIVE_METHOD(OSFileSystem, readDirect, "(IIII)J"),
     NATIVE_METHOD(OSFileSystem, readv, "(I[I[I[II)J"),
     NATIVE_METHOD(OSFileSystem, seek, "(IJI)J"),
     NATIVE_METHOD(OSFileSystem, transfer, "(ILjava/io/FileDescriptor;JJ)J"),
     NATIVE_METHOD(OSFileSystem, truncate, "(IJ)V"),
     NATIVE_METHOD(OSFileSystem, unlockImpl, "(IJJ)V"),
-    NATIVE_METHOD(OSFileSystem, write, "(I[BII)J"),
+    // begin WITH_TAINT_TRACKING
+    NATIVE_METHOD(OSFileSystem, writeImpl, "(I[BII)J"),
+    // end WITH_TAINT_TRACKING
     NATIVE_METHOD(OSFileSystem, writeDirect, "(IIII)J"),
     NATIVE_METHOD(OSFileSystem, writev, "(I[I[I[II)J"),
 };

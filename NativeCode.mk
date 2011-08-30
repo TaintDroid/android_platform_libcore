@@ -99,6 +99,10 @@ LOCAL_SHARED_LIBRARIES := $(core_shared_libraries)
 LOCAL_STATIC_LIBRARIES := $(core_static_libraries)
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libjavacore
+# turn on taint tracking
+ifeq ($(WITH_TAINT_TRACKING),true)
+    LOCAL_CFLAGS += -DWITH_TAINT_TRACKING
+endif
 include $(BUILD_STATIC_LIBRARY)
 
 # Deal with keystores required for security. Note: The path to this file

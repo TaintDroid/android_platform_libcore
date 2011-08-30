@@ -380,7 +380,16 @@ static jboolean File_mkdirImpl(JNIEnv* env, jclass, jstring javaPath) {
     }
 
     // On Android, we don't want default permissions to allow global access.
+#ifdef WITH_TAINT_TRACKING
+    // In case the SDcard is ext2, make sure it is 777
+    if (strncmp(path.c_str(), "/sdcard/", 8) == 0) {
+        return (mkdir(path.c_str(), S_IRWXU|S_IRWXG|S_IRWXO) == 0);
+    } else {
+        return (mkdir(path.c_str(), S_IRWXU) == 0);
+    }
+#else
     return (mkdir(path.c_str(), S_IRWXU) == 0);
+#endif
 }
 
 static jboolean File_createNewFileImpl(JNIEnv* env, jclass, jstring javaPath) {
@@ -390,7 +399,17 @@ static jboolean File_createNewFileImpl(JNIEnv* env, jclass, jstring javaPath) {
     }
 
     // On Android, we don't want default permissions to allow global access.
+#ifdef WITH_TAINT_TRACKING
+    int mode = 0;
+    if (strncmp(path.c_str(), "/sdcard/", 8) == 0) {
+    	mode = 0666;
+    } else {
+    	mode = 0600;
+    }
+    ScopedFd fd(open(path.c_str(), O_CREAT | O_EXCL, mode));
+#else
     ScopedFd fd(open(path.c_str(), O_CREAT | O_EXCL, 0600));
+#endif
     if (fd.get() != -1) {
         // We created a new file. Success!
         return JNI_TRUE;

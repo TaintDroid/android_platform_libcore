@@ -25,6 +25,10 @@ import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
+//begin WITH_TAINT_TRACKING
+import dalvik.system.Taint;
+// end WITH_TAINT_TRACKING
+
 class OSFileSystem implements IFileSystem {
 
     private static final OSFileSystem singleton = new OSFileSystem();
@@ -87,6 +91,7 @@ class OSFileSystem implements IFileSystem {
      */
     public native long seek(int fd, long offset, int whence) throws IOException;
 
+    // FIXME: TaintDroid currently cannot track taint for readDirect/writeDirect
     /*
      * Direct read/write APIs work on addresses.
      */
@@ -97,10 +102,50 @@ class OSFileSystem implements IFileSystem {
     /*
      * Indirect read/writes work on byte[]'s
      */
-    public native long read(int fd, byte[] bytes, int offset, int length) throws IOException;
+	// begin WITH_TAINT_TRACKING
+	public long read(int fileDescriptor, byte[] bytes, int offset, int length)
+			throws IOException {
+		if (bytes == null) {
+			throw new NullPointerException();
+		}
+		// return readImpl(fileDescriptor, bytes, offset, length);
+		long bytesRead = readImpl(fileDescriptor, bytes, offset, length);
+		int tag = Taint.getTaintFile(fileDescriptor);
+		if (tag != Taint.TAINT_CLEAR) {
+			String dstr = new String(bytes);
+			String tstr = "0x" + Integer.toHexString(tag);
+			Taint.log("OSFileSystem.read(" + fileDescriptor
+					+ "): reading with tag " + tstr + " data[" + dstr + "]");
+			Taint.addTaintByteArray(bytes, tag);
+		}
+		return bytesRead;
+	}
 
-    public native long write(int fd, byte[] bytes, int offset, int length) throws IOException;
+	public long write(int fileDescriptor, byte[] bytes, int offset, int length)
+			throws IOException {
+		if (bytes == null) {
+			throw new NullPointerException();
+		}
+		// return writeImpl(fileDescriptor, bytes, offset, length);
+		long bytesWritten = writeImpl(fileDescriptor, bytes, offset, length);
+		int tag = Taint.getTaintByteArray(bytes);
+		if (tag != Taint.TAINT_CLEAR) {
+			String dstr = new String(bytes);
+			Taint.logPathFromFd(fileDescriptor);
+			String tstr = "0x" + Integer.toHexString(tag);
+			Taint.log("OSFileSystem.write(" + fileDescriptor
+					+ "): writing with tag " + tstr + " data[" + dstr + "]");
+			Taint.addTaintFile(fileDescriptor, tag);
+		}
+		return bytesWritten;
+	}
+    
+    public native long readImpl(int fd, byte[] bytes, int offset, int length) throws IOException;
 
+    public native long writeImpl(int fd, byte[] bytes, int offset, int length) throws IOException;
+    // end WITH_TAINT_TRACKING
+
+    // FIXME: TaintDroid currently cannot track taint for readv/writev
     /*
      * Scatter/gather calls.
      */
