@@ -28,6 +28,9 @@ import java.util.Comparator;
 import java.util.Formatter;
 import java.util.Locale;
 import java.util.regex.Pattern;
+// begin WITH_TAINT_TRACKING
+import dalvik.system.Taint;
+// end WITH_TAINT_TRACKING
 
 /**
  * An immutable sequence of characters/code units ({@code char}s). A
@@ -1800,6 +1803,9 @@ outer:
             s = new String(0, 1, new char[] { value });
         }
         s.hashCode = value;
+// begin WITH_TAINT_TRACKING
+	Taint.addTaintString(s,Taint.getTaintChar(value));
+// end WITH_TAINT_TRACKING
         return s;
     }
 
@@ -1870,7 +1876,11 @@ outer:
      * @return the boolean converted to a string.
      */
     public static String valueOf(boolean value) {
-        return value ? "true" : "false";
+// begin WITH_TAINT_TRACKING
+	String ret = value ? "true" : "false";
+	Taint.addTaintString(ret, Taint.getTaintBoolean(value));
+        return ret;
+// end WITH_TAINT_TRACKING
     }
 
     /**

@@ -16,6 +16,10 @@
 
 package java.lang;
 
+// begin WITH_TAINT_TRACKING
+import dalvik.system.Taint;
+// end WITH_TAINT_TRACKING
+
 /**
  * Converts integral types to strings. This class is public but hidden so that it can also be
  * used by java.util.Formatter to speed up %d. This class is in java.lang so that it can take
@@ -173,6 +177,9 @@ public final class IntegralToString {
     private static String convertInt(AbstractStringBuilder sb, int i) {
         boolean negative = false;
         String quickResult = null;
+// begin WITH_TAINT_TRACKING
+	int taint = Taint.getTaintInt(i);
+// end WITH_TAINT_TRACKING
         if (i < 0) {
             negative = true;
             i = -i;
@@ -199,9 +206,15 @@ public final class IntegralToString {
         }
         if (quickResult != null) {
             if (sb != null) {
+// begin WITH_TAINT_TRACKING
+	        Taint.addTaintString(quickResult, taint);
+// end WITH_TAINT_TRACKING
                 sb.append0(quickResult);
                 return null;
             }
+// begin WITH_TAINT_TRACKING
+	    Taint.addTaintString(quickResult, taint);
+// end WITH_TAINT_TRACKING
             return quickResult;
         }
 
@@ -236,7 +249,11 @@ public final class IntegralToString {
             sb.append0(buf, cursor, bufLen - cursor);
             return null;
         } else {
-            return new String(cursor, bufLen - cursor, buf);
+// begin WITH_TAINT_TRACKING
+	    String ret = new String(cursor, bufLen - cursor, buf);
+	    Taint.addTaintString(ret, taint);
+            return ret;
+// end WITH_TAINT_TRACKING
         }
     }
 
