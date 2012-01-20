@@ -799,37 +799,15 @@ public class GregorianCalendarTest extends junit.framework.TestCase {
         args = {}
     )
     public void test_computeTime() {
-
-        // Regression for Harmony-493
-        GregorianCalendar g = new GregorianCalendar(
-            TimeZone.getTimeZone("Europe/London"),
-            new Locale("en", "GB")
-        );
-        g.clear();
-        g.set(2006, 02, 26, 01, 50, 00);
-        assertEquals(1143337800000L, g.getTimeInMillis());
-
-        GregorianCalendar g1 = new GregorianCalendar(
-            TimeZone.getTimeZone("Europe/Moscow")
-        );
+        GregorianCalendar g1 = new GregorianCalendar(TimeZone.getTimeZone("Europe/Moscow"));
         g1.clear();
-        g1.set(2006, 02, 26, 02, 20, 00); // in the DST transition interval
-        assertEquals(1143328800000L, g1.getTimeInMillis());
-        assertEquals(3, g1.get(Calendar.HOUR_OF_DAY));
-        g1.clear();
-        g1.set(2006, 9, 29, 02, 50, 00); // transition from DST
-        assertEquals(1162079400000L, g1.getTimeInMillis());
-        assertEquals(2, g1.get(Calendar.HOUR_OF_DAY));
-        // End of regression test
-
         g1.set(2006, -9, 29, 02, 50, 00); // transition from DST
         g1.setLenient(false);
 
         try {
             g1.getTimeInMillis();
-            fail("IllegalArgumentException expected");
-        } catch (IllegalArgumentException e) {
-            //expected
+            fail();
+        } catch (IllegalArgumentException expected) {
         }
     }
 
