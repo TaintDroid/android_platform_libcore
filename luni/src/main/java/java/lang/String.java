@@ -29,6 +29,9 @@ import java.util.Formatter;
 import java.util.Locale;
 import java.util.regex.Pattern;
 import libcore.util.EmptyArray;
+// begin WITH_TAINT_TRACKING
+import dalvik.system.Taint;
+// end WITH_TAINT_TRACKING
 
 /**
  * An immutable sequence of characters/code units ({@code char}s). A
@@ -583,7 +586,14 @@ outer:
      * @throws IndexOutOfBoundsException
      *             if {@code index < 0} or {@code index >= length()}.
      */
-    public native char charAt(int index);
+// begin WITH_TAINT_TRACKING
+    //public native char charAt(int index);
+    public native char charAt_intrinsic(int index);
+    
+    public char charAt(int index) {
+        return charAt_intrinsic(index);
+    }
+// end WITH_TAINT_TRACKING
 
     private StringIndexOutOfBoundsException indexAndLength(int index) {
         throw new StringIndexOutOfBoundsException(this, index);
@@ -631,7 +641,14 @@ outer:
      * @throws NullPointerException
      *             if {@code string} is {@code null}.
      */
-    public native int compareTo(String string);
+// begin WITH_TAINT_TRACKING
+    //public native int compareTo(String string);
+    public native int compareTo_intrinsic(String string);
+    
+    public int compareTo(String string) {
+        return compareTo_intrinsic(string);
+    }
+// end WITH_TAINT_TRACKING
 
     /**
      * Compares the specified string to this string using the Unicode values of
@@ -752,7 +769,14 @@ outer:
      *         {@code false} otherwise.
      * @see #hashCode
      */
-    @Override public native boolean equals(Object object);
+// begin WITH_TAINT_TRACKING
+    //@Override public native boolean equals(Object object);
+    public native boolean equals_intrinsic(Object object);
+    
+    @Override public boolean equals(Object object) {
+        return equals_intrinsic(object);
+    }
+// end WITH_TAINT_TRACKING
 
     /**
      * Compares the specified string to this string ignoring the case of the
@@ -966,7 +990,14 @@ outer:
         return fastIndexOf(c, start);
     }
 
-    private native int fastIndexOf(int c, int start);
+// begin WITH_TAINT_TRACKING
+    //private native int fastIndexOf(int c, int start);
+    private native int fastIndexOf_intrinsic(int c, int start);
+    
+    private int fastIndexOf(int c, int start) {
+        return fastIndexOf_intrinsic(c, start);
+    }
+// end WITH_TAINT_TRACKING
 
     private int indexOfSupplementary(int c, int start) {
         if (!Character.isSupplementaryCodePoint(c)) {
@@ -1087,7 +1118,14 @@ outer:
      *
      * @since 1.6
      */
-    public native boolean isEmpty();
+// begin WITH_TAINT_TRACKING
+    //public native boolean isEmpty();
+    public native boolean isEmpty_intrinsic();
+    
+    public boolean isEmpty() {
+        return isEmpty_intrinsic();
+    }
+// end WITH_TAINT_TRACKING
 
     /**
      * Returns the last index of the code point {@code c}, or -1.
@@ -1211,7 +1249,14 @@ outer:
      *
      * @return the number of characters in this string.
      */
-    public native int length();
+// begin WITH_TAINT_TRACKING
+    //public native int length();
+    public native int length_intrinsic();
+    
+    public int length() {
+        return length_intrinsic();
+    }
+// end WITH_TAINT_TRACKING
 
     /**
      * Compares the specified string to this string and compares the specified
@@ -1621,6 +1666,9 @@ outer:
             s = new String(0, 1, new char[] { value });
         }
         s.hashCode = value;
+// begin WITH_TAINT_TRACKING
+        Taint.addTaintString(s,Taint.getTaintChar(value));
+// end WITH_TAINT_TRACKING
         return s;
     }
 
@@ -1691,7 +1739,11 @@ outer:
      * @return the boolean converted to a string.
      */
     public static String valueOf(boolean value) {
-        return value ? "true" : "false";
+// begin WITH_TAINT_TRACKING
+        String ret = value ? "true" : "false";
+        Taint.addTaintString(ret, Taint.getTaintBoolean(value));
+        return ret;
+// end WITH_TAINT_TRACKING
     }
 
     /**

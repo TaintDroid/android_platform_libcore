@@ -26,6 +26,10 @@ import libcore.io.Libcore;
 import libcore.io.Memory;
 import static libcore.io.OsConstants.*;
 
+// begin WITH_TAINT_TRACKING
+import dalvik.system.Taint;
+// end WITH_TAINT_TRACKING
+
 class MemoryBlock {
     /**
      * Handles calling munmap(2) on a memory-mapped region.
@@ -76,6 +80,13 @@ class MemoryBlock {
             array = null;
             address = 0;
         }
+
+        // begin WITH_TAINT_TRACKING
+        @Override public void addTaint(int newTaint) {
+            super.addTaint(newTaint);
+            Taint.addTaintByteArray(array, newTaint);
+        }
+        // end WITH_TAINT_TRACKING
     }
 
     /**
@@ -91,6 +102,12 @@ class MemoryBlock {
     // TODO: should be long on 64-bit devices; int for performance.
     protected int address;
     protected final long size;
+// begin WITH_TAINT_TRACKING
+    protected int taint;
+    public void addTaint(int newTaint) {
+        taint = taint | newTaint;
+    }
+// end WITH_TAINT_TRACKING
 
     public static MemoryBlock mmap(FileDescriptor fd, long offset, long size, MapMode mapMode) throws IOException {
         if (size == 0) {
@@ -135,6 +152,9 @@ class MemoryBlock {
     private MemoryBlock(int address, long size) {
         this.address = address;
         this.size = size;
+// begin WITH_TAINT_TRACKING
+        this.taint = Taint.TAINT_CLEAR;
+// end WITH_TAINT_TRACKING
     }
 
     // Used to support array/arrayOffset/hasArray for direct buffers.
@@ -146,91 +166,163 @@ class MemoryBlock {
     }
 
     public final void pokeByte(int offset, byte value) {
+// begin WITH_TAINT_TRACKING
+        addTaint(Taint.getTaintByte(value));
+// end WITH_TAINT_TRACKING
         Memory.pokeByte(address + offset, value);
     }
 
     public final void pokeByteArray(int offset, byte[] src, int srcOffset, int byteCount) {
+// begin WITH_TAINT_TRACKING
+        addTaint(Taint.getTaintByteArray(src));
+// end WITH_TAINT_TRACKING
         Memory.pokeByteArray(address + offset, src, srcOffset, byteCount);
     }
 
     public final void pokeCharArray(int offset, char[] src, int srcOffset, int charCount, boolean swap) {
+// begin WITH_TAINT_TRACKING
+        addTaint(Taint.getTaintCharArray(src));
+// end WITH_TAINT_TRACKING
         Memory.pokeCharArray(address + offset, src, srcOffset, charCount, swap);
     }
 
     public final void pokeDoubleArray(int offset, double[] src, int srcOffset, int doubleCount, boolean swap) {
+// begin WITH_TAINT_TRACKING
+        addTaint(Taint.getTaintDoubleArray(src));
+// end WITH_TAINT_TRACKING
         Memory.pokeDoubleArray(address + offset, src, srcOffset, doubleCount, swap);
     }
 
     public final void pokeFloatArray(int offset, float[] src, int srcOffset, int floatCount, boolean swap) {
+// begin WITH_TAINT_TRACKING
+        addTaint(Taint.getTaintFloatArray(src));
+// end WITH_TAINT_TRACKING
         Memory.pokeFloatArray(address + offset, src, srcOffset, floatCount, swap);
     }
 
     public final void pokeIntArray(int offset, int[] src, int srcOffset, int intCount, boolean swap) {
+// begin WITH_TAINT_TRACKING
+        addTaint(Taint.getTaintIntArray(src));
+// end WITH_TAINT_TRACKING
         Memory.pokeIntArray(address + offset, src, srcOffset, intCount, swap);
     }
 
     public final void pokeLongArray(int offset, long[] src, int srcOffset, int longCount, boolean swap) {
+// begin WITH_TAINT_TRACKING
+        addTaint(Taint.getTaintLongArray(src));
+// end WITH_TAINT_TRACKING
         Memory.pokeLongArray(address + offset, src, srcOffset, longCount, swap);
     }
 
     public final void pokeShortArray(int offset, short[] src, int srcOffset, int shortCount, boolean swap) {
+// begin WITH_TAINT_TRACKING
+        addTaint(Taint.getTaintShortArray(src));
+// end WITH_TAINT_TRACKING
         Memory.pokeShortArray(address + offset, src, srcOffset, shortCount, swap);
     }
 
     public final byte peekByte(int offset) {
-        return Memory.peekByte(address + offset);
+// begin WITH_TAINT_TRACKING
+//        return Memory.peekByte(address + offset);
+        byte val = Memory.peekByte(address + offset);
+        return Taint.addTaintByte(val, taint);
+// end WITH_TAINT_TRACKING
     }
 
     public final void peekByteArray(int offset, byte[] dst, int dstOffset, int byteCount) {
         Memory.peekByteArray(address + offset, dst, dstOffset, byteCount);
+// begin WITH_TAINT_TRACKING
+        Taint.addTaintByteArray(dst, taint);
+// end WITH_TAINT_TRACKING
     }
 
     public final void peekCharArray(int offset, char[] dst, int dstOffset, int charCount, boolean swap) {
         Memory.peekCharArray(address + offset, dst, dstOffset, charCount, swap);
+// begin WITH_TAINT_TRACKING
+        Taint.addTaintCharArray(dst, taint);
+// end WITH_TAINT_TRACKING
     }
 
     public final void peekDoubleArray(int offset, double[] dst, int dstOffset, int doubleCount, boolean swap) {
         Memory.peekDoubleArray(address + offset, dst, dstOffset, doubleCount, swap);
+// begin WITH_TAINT_TRACKING
+        Taint.addTaintDoubleArray(dst, taint);
+// end WITH_TAINT_TRACKING
     }
 
     public final void peekFloatArray(int offset, float[] dst, int dstOffset, int floatCount, boolean swap) {
         Memory.peekFloatArray(address + offset, dst, dstOffset, floatCount, swap);
+// begin WITH_TAINT_TRACKING
+        Taint.addTaintFloatArray(dst, taint);
+// end WITH_TAINT_TRACKING
     }
 
     public final void peekIntArray(int offset, int[] dst, int dstOffset, int intCount, boolean swap) {
         Memory.peekIntArray(address + offset, dst, dstOffset, intCount, swap);
+// begin WITH_TAINT_TRACKING
+        Taint.addTaintIntArray(dst, taint);
+// end WITH_TAINT_TRACKING
     }
 
     public final void peekLongArray(int offset, long[] dst, int dstOffset, int longCount, boolean swap) {
         Memory.peekLongArray(address + offset, dst, dstOffset, longCount, swap);
+// begin WITH_TAINT_TRACKING
+        Taint.addTaintLongArray(dst, taint);
+// end WITH_TAINT_TRACKING
     }
 
     public final void peekShortArray(int offset, short[] dst, int dstOffset, int shortCount, boolean swap) {
         Memory.peekShortArray(address + offset, dst, dstOffset, shortCount, swap);
+// begin WITH_TAINT_TRACKING
+        Taint.addTaintShortArray(dst, taint);
+// end WITH_TAINT_TRACKING
     }
 
+// PJG: FIXME: why disabled for Short?
+
     public final void pokeShort(int offset, short value, ByteOrder order) {
+// begin WITH_TAINT_TRACKING
+//        addTaint(Taint.getTaintShort(value));
+// end WITH_TAINT_TRACKING
         Memory.pokeShort(address + offset, value, order.needsSwap);
     }
 
     public final short peekShort(int offset, ByteOrder order) {
+// begin WITH_TAINT_TRACKING
         return Memory.peekShort(address + offset, order.needsSwap);
+//        short val = Memory.peekShort(address + offset, order.needsSwap);
+//        return Taint.addTaintShort(val, taint);
+// end WITH_TAINT_TRACKING
     }
 
     public final void pokeInt(int offset, int value, ByteOrder order) {
+// begin WITH_TAINT_TRACKING
+        taint = taint | Taint.getTaintInt(value);
+// end WITH_TAINT_TRACKING
         Memory.pokeInt(address + offset, value, order.needsSwap);
     }
 
     public final int peekInt(int offset, ByteOrder order) {
-        return Memory.peekInt(address + offset, order.needsSwap);
+// begin WITH_TAINT_TRACKING
+//        return Memory.peekInt(address + offset, order.needsSwap);
+        int val = Memory.peekInt(address + offset, order.needsSwap);
+        return Taint.addTaintInt(val, taint);
+// end WITH_TAINT_TRACKING
     }
 
     public final void pokeLong(int offset, long value, ByteOrder order) {
+// begin WITH_TAINT_TRACKING
+        addTaint(Taint.getTaintLong(value));
+// end WITH_TAINT_TRACKING
         Memory.pokeLong(address + offset, value, order.needsSwap);
     }
 
     public final long peekLong(int offset, ByteOrder order) {
-        return Memory.peekLong(address + offset, order.needsSwap);
+// begin WITH_TAINT_TRACKING
+//        return Memory.peekLong(address + offset, order.needsSwap);
+        long val = Memory.peekLong(address + offset, order.needsSwap);
+        return Taint.addTaintLong(val, taint);
+// end WITH_TAINT_TRACKING
     }
 
     public final int toInt() {
@@ -244,4 +336,10 @@ class MemoryBlock {
     public final long getSize() {
         return size;
     }
+
+// begin WITH_TAINT_TRACKING
+    public int getTaint() {
+        return taint;
+    }
+// end WITH_TAINT_TRACKING
 }

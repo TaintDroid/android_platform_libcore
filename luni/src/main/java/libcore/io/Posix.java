@@ -25,6 +25,10 @@ import java.nio.NioUtils;
 import libcore.util.MutableInt;
 import libcore.util.MutableLong;
 
+// begin WITH_TAINT_TRACKING
+import dalvik.system.Taint;
+// end WITH_TAINT_TRACKING
+
 public final class Posix implements Os {
     Posix() { }
 
@@ -33,7 +37,18 @@ public final class Posix implements Os {
     public native void bind(FileDescriptor fd, InetAddress address, int port) throws ErrnoException;
     public native void chmod(String path, int mode) throws ErrnoException;
     public native void close(FileDescriptor fd) throws ErrnoException;
-    public native void connect(FileDescriptor fd, InetAddress address, int port) throws ErrnoException;
+// begin WITH_TAINT_TRACKING
+    //public native void connect(FileDescriptor fd, InetAddress address, int port) throws ErrnoException;
+    public native void connectImpl(FileDescriptor fd, InetAddress address, int port) throws ErrnoException;
+    public void connect(FileDescriptor fd, InetAddress address, int port) throws ErrnoException {
+        String addr = address.getHostAddress();
+        if (addr != null) {
+             fd.hasName = true;
+             fd.name = addr;
+    	}
+        connectImpl(fd, address, port);
+    }
+// end WITH_TAINT_TRACKING
     public native FileDescriptor dup(FileDescriptor oldFd) throws ErrnoException;
     public native FileDescriptor dup2(FileDescriptor oldFd, int newFd) throws ErrnoException;
     public native String[] environ();
@@ -93,9 +108,36 @@ public final class Posix implements Os {
         // This indirection isn't strictly necessary, but ensures that our public interface is type safe.
         return preadBytes(fd, bytes, byteOffset, byteCount, offset);
     }
-    private native int preadBytes(FileDescriptor fd, Object buffer, int bufferOffset, int byteCount, long offset) throws ErrnoException;
+// begin WITH_TAINT_TRACKING
+    //private native int preadBytes(FileDescriptor fd, Object buffer, int bufferOffset, int byteCount, long offset) throws ErrnoException;
+    private native int preadBytesImpl(FileDescriptor fd, Object buffer, int bufferOffset, int byteCount, long offset) throws ErrnoException;
+    private int preadBytes(FileDescriptor fd, Object buffer, int bufferOffset, int byteCount, long offset) throws ErrnoException {
+        if (buffer == null) {
+            throw new NullPointerException();
+        }
+        int bytesRead = preadBytesImpl(fd, buffer, bufferOffset, byteCount, offset);
+        int fdInt = fd.getDescriptor();
+        int tag = Taint.getTaintFile(fdInt);
+        if (tag != Taint.TAINT_CLEAR) {
+            String dstr = new String((byte[])buffer, bufferOffset, ((byteCount > 100)?100:byteCount));
+            String tstr = "0x" + Integer.toHexString(tag);
+            Taint.log("libcore.os.read(" + fdInt + "): reading with tag " + tstr + " data[" + dstr + "]");
+            Taint.addTaintByteArray((byte[])buffer, tag);
+        }
+        return bytesRead;
+    }
+// end WITH_TAINT_TRACKING
     public int pwrite(FileDescriptor fd, ByteBuffer buffer, long offset) throws ErrnoException {
         if (buffer.isDirect()) {
+// begin WITH_TAINT_TRACKING
+            int tag = buffer.getDirectByteBufferTaint();
+            if (tag != Taint.TAINT_CLEAR) {
+                int fdInt = fd.getDescriptor();
+                Taint.logPathFromFd(fdInt);
+                String tstr = "0x" + Integer.toHexString(tag);
+                Taint.log("libcore.os.pwrite a direct ByteBuffer with taint tag " + tstr);
+            }
+// end WITH_TAINT_TRACKING
             return pwriteBytes(fd, buffer, buffer.position(), buffer.remaining(), offset);
         } else {
             return pwriteBytes(fd, NioUtils.unsafeArray(buffer), NioUtils.unsafeArrayOffset(buffer) + buffer.position(), buffer.remaining(), offset);
@@ -105,8 +147,29 @@ public final class Posix implements Os {
         // This indirection isn't strictly necessary, but ensures that our public interface is type safe.
         return pwriteBytes(fd, bytes, byteOffset, byteCount, offset);
     }
-    private native int pwriteBytes(FileDescriptor fd, Object buffer, int bufferOffset, int byteCount, long offset) throws ErrnoException;
-    public int read(FileDescriptor fd, ByteBuffer buffer) throws ErrnoException {
+// begin WITH_TAINT_TRACKING
+    //private native int pwriteBytes(FileDescriptor fd, Object buffer, int bufferOffset, int byteCount, long offset) throws ErrnoException;
+    private native int pwriteBytesImpl(FileDescriptor fd, Object buffer, int bufferOffset, int byteCount, long offset) throws ErrnoException;
+    private int pwriteBytes(FileDescriptor fd, Object buffer, int bufferOffset, int byteCount, long offset) throws ErrnoException {
+        if (buffer == null) {
+            throw new NullPointerException();
+        }
+		
+        if (buffer instanceof byte[]) {
+            int fdInt = fd.getDescriptor();
+            int tag = Taint.getTaintByteArray((byte[]) buffer);
+            if (tag != Taint.TAINT_CLEAR) {
+                String dstr = new String((byte[]) buffer, bufferOffset, ((byteCount > 100) ? 100 : byteCount));
+                Taint.logPathFromFd(fdInt);
+                String tstr = "0x" + Integer.toHexString(tag);
+                Taint.log("libcore.os.pwrite byte array(" + fdInt + "): writing with tag " + tstr + " data[" + dstr + "]");
+            }
+        }
+        int bytesWritten = pwriteBytesImpl(fd, buffer, bufferOffset, byteCount, offset);
+        return bytesWritten;
+    }
+// end WITH_TAINT_TRACKING
+	public int read(FileDescriptor fd, ByteBuffer buffer) throws ErrnoException {
         if (buffer.isDirect()) {
             return readBytes(fd, buffer, buffer.position(), buffer.remaining());
         } else {
@@ -117,7 +180,26 @@ public final class Posix implements Os {
         // This indirection isn't strictly necessary, but ensures that our public interface is type safe.
         return readBytes(fd, bytes, byteOffset, byteCount);
     }
-    private native int readBytes(FileDescriptor fd, Object buffer, int offset, int byteCount) throws ErrnoException;
+	
+// begin WITH_TAINT_TRACKING
+    //private native int readBytes(FileDescriptor fd, Object buffer, int offset, int byteCount) throws ErrnoException;
+    private native int readBytesImpl(FileDescriptor fd, Object buffer, int offset, int byteCount) throws ErrnoException;
+    private int readBytes(FileDescriptor fd, Object buffer, int offset, int byteCount) throws ErrnoException {
+        if (buffer == null) {
+            throw new NullPointerException();
+        }
+        int bytesRead = readBytesImpl(fd, buffer, offset, byteCount);
+        int fdInt = fd.getDescriptor();
+        int tag = Taint.getTaintFile(fdInt);
+        if (tag != Taint.TAINT_CLEAR) {
+            String dstr = new String((byte[])buffer, offset, ((byteCount > 100) ? 100 : byteCount));
+            String tstr = "0x" + Integer.toHexString(tag);
+            Taint.log("libcore.os.read(" + fdInt + "): reading with tag " + tstr + " data[" + dstr + "]");
+            Taint.addTaintByteArray((byte[])buffer, tag);
+        }
+        return bytesRead;
+    }
+// end WITH_TAINT_TRACKING
     public native int readv(FileDescriptor fd, Object[] buffers, int[] offsets, int[] byteCounts) throws ErrnoException;
     public int recvfrom(FileDescriptor fd, ByteBuffer buffer, int flags, InetSocketAddress srcAddress) throws ErrnoException {
         if (buffer.isDirect()) {
@@ -136,6 +218,14 @@ public final class Posix implements Os {
     public native long sendfile(FileDescriptor outFd, FileDescriptor inFd, MutableLong inOffset, long byteCount) throws ErrnoException;
     public int sendto(FileDescriptor fd, ByteBuffer buffer, int flags, InetAddress inetAddress, int port) throws ErrnoException {
         if (buffer.isDirect()) {
+// begin WITH_TAINT_TRACKING
+            int tag = buffer.getDirectByteBufferTaint();
+            if (tag != Taint.TAINT_CLEAR) {
+                String addr = (fd.hasName) ? fd.name : "unknown";
+                String tstr = "0x" + Integer.toHexString(tag);
+                Taint.log("libcore.os.sendto: send a direct ByteBuffer with taint tag " + tstr);
+            }
+// end WITH_TAINT_TRACKING
             return sendtoBytes(fd, buffer, buffer.position(), buffer.remaining(), flags, inetAddress, port);
         } else {
             return sendtoBytes(fd, NioUtils.unsafeArray(buffer), NioUtils.unsafeArrayOffset(buffer) + buffer.position(), buffer.remaining(), flags, inetAddress, port);
@@ -145,7 +235,24 @@ public final class Posix implements Os {
         // This indirection isn't strictly necessary, but ensures that our public interface is type safe.
         return sendtoBytes(fd, bytes, byteOffset, byteCount, flags, inetAddress, port);
     }
-    private native int sendtoBytes(FileDescriptor fd, Object buffer, int byteOffset, int byteCount, int flags, InetAddress inetAddress, int port) throws ErrnoException;
+	
+// begin WITH_TAINT_TRACKING
+    //private native int sendtoBytes(FileDescriptor fd, Object buffer, int byteOffset, int byteCount, int flags, InetAddress inetAddress, int port) throws ErrnoException;
+    private native int sendtoBytesImpl(FileDescriptor fd, Object buffer, int byteOffset, int byteCount, int flags, InetAddress inetAddress, int port) throws ErrnoException;
+    private int sendtoBytes(FileDescriptor fd, Object buffer, int byteOffset, int byteCount, int flags, InetAddress inetAddress, int port) throws ErrnoException {
+        if (buffer instanceof byte[]) {
+            int tag = Taint.getTaintByteArray((byte[]) buffer);
+    	    if (tag != Taint.TAINT_CLEAR) {
+                String dstr = new String((byte[]) buffer, byteOffset, ((byteCount > 100) ? 100 : byteCount));
+                String addr = (fd.hasName) ? fd.name : "unknown";
+    	        String tstr = "0x" + Integer.toHexString(tag);
+                Taint.log("libcore.os.send("+addr+") received data with tag " + tstr + " data=["+dstr+"] ");
+            }
+        }
+	return sendtoBytesImpl(fd, buffer, byteOffset, byteCount, flags, inetAddress, port);
+    }
+// end WITH_TAINT_TRACKING
+	
     public native void setegid(int egid) throws ErrnoException;
     public native void seteuid(int euid) throws ErrnoException;
     public native void setgid(int gid) throws ErrnoException;
@@ -168,6 +275,15 @@ public final class Posix implements Os {
     public native int waitpid(int pid, MutableInt status, int options) throws ErrnoException;
     public int write(FileDescriptor fd, ByteBuffer buffer) throws ErrnoException {
         if (buffer.isDirect()) {
+// begin WITH_TAINT_TRACKING
+            int tag = buffer.getDirectByteBufferTaint();
+            if (tag != Taint.TAINT_CLEAR) {
+                int fdInt = fd.getDescriptor();
+                Taint.logPathFromFd(fdInt);
+                String tstr = "0x" + Integer.toHexString(tag);
+                Taint.log("libcore.os.write a direct ByteBuffer in (" + fdInt + "): writing with tag " + tstr);
+            }
+// end WITH_TAINT_TRACKING
             return writeBytes(fd, buffer, buffer.position(), buffer.remaining());
         } else {
             return writeBytes(fd, NioUtils.unsafeArray(buffer), NioUtils.unsafeArrayOffset(buffer) + buffer.position(), buffer.remaining());
@@ -177,6 +293,29 @@ public final class Posix implements Os {
         // This indirection isn't strictly necessary, but ensures that our public interface is type safe.
         return writeBytes(fd, bytes, byteOffset, byteCount);
     }
-    private native int writeBytes(FileDescriptor fd, Object buffer, int offset, int byteCount) throws ErrnoException;
+	
+//begin WITH_TAINT_TRACKING
+    //private native int writeBytes(FileDescriptor fd, Object buffer, int offset, int byteCount) throws ErrnoException;
+    private native int writeBytesImpl(FileDescriptor fd, Object buffer, int offset, int byteCount) throws ErrnoException;
+    private int writeBytes(FileDescriptor fd, Object buffer, int offset, int byteCount) throws ErrnoException {
+        if (buffer == null) {
+            throw new NullPointerException();
+        }
+	
+        if (buffer instanceof byte[]) {
+            int fdInt = fd.getDescriptor();
+            int tag = Taint.getTaintByteArray((byte[]) buffer);
+            if (tag != Taint.TAINT_CLEAR) {
+                //We only display at most 100 characters of the data in logcat, to avoid the overflow
+                String dstr = new String((byte[]) buffer, offset, ((byteCount > 100) ? 100 : byteCount));
+                Taint.logPathFromFd(fdInt);
+                String tstr = "0x" + Integer.toHexString(tag);
+                Taint.log("libcore.os.write byte array(" + fdInt + "): writing with tag " + tstr + " data[" + dstr + "]");
+            }
+        }
+        int bytesWritten = writeBytesImpl(fd, buffer, offset, byteCount);
+        return bytesWritten;
+    }
+//end WITH_TAINT_TRACKING
     public native int writev(FileDescriptor fd, Object[] buffers, int[] offsets, int[] byteCounts) throws ErrnoException;
 }

@@ -44,6 +44,9 @@ import javax.net.ssl.X509TrustManager;
 import javax.security.auth.x500.X500Principal;
 import libcore.io.Streams;
 import org.apache.harmony.security.provider.cert.X509CertImpl;
+// begin WITH_TAINT_TRACKING
+import dalvik.system.Taint;
+// end WITH_TAINT_TRACKING
 
 /**
  * Implementation of the class OpenSSLSocketImpl based on OpenSSL.
@@ -698,6 +701,20 @@ public class OpenSSLSocketImpl
          */
         @Override
         public void write(int oneByte) throws IOException {
+// begin WITH_TAINT_TRACKING
+            int tag = Taint.getTaintInt(oneByte);
+            FileDescriptor fd = socket.getFileDescriptor$();
+            if (tag != Taint.TAINT_CLEAR) {
+                String dstr = String.valueOf(oneByte);
+                // We only display at most 100 characters in logcat of data
+                if (dstr.length() > 100) {
+                    dstr = dstr.substring(0, 100);                                                              
+                }
+                String addr = (fd.hasName) ? fd.name : "unknown";
+                String tstr = "0x" + Integer.toHexString(tag);
+                Taint.log("SSLOutputStream.write(" + addr + ") received data with tag " + tstr + " data=[" + dstr + "]");
+            }
+// end WITH_TAINT_TRACKING
             Streams.writeSingleByte(this, oneByte);
         }
 
@@ -714,6 +731,21 @@ public class OpenSSLSocketImpl
                 if (byteCount == 0) {
                     return;
                 }
+// begin WITH_TAINT_TRACKING
+                int tag = Taint.getTaintByteArray(buf);
+                FileDescriptor fd = socket.getFileDescriptor$();
+                if (tag != Taint.TAINT_CLEAR) {
+                    int disLen = byteCount;
+                    if (byteCount > 100) {
+                        disLen = 100;
+                    }
+                    // We only display at most 100 charaters in logcat
+                    String dstr = new String(buf, offset, disLen);
+                    String addr = (fd.hasName) ? fd.name : "unknown";
+                    String tstr = "0x" + Integer.toHexString(tag);
+                    Taint.log("SSLOutputStream.write(" + addr + ") received data with tag " + tstr + " data=[" + dstr + "]");
+                }
+// end WITH_TAINT_TRACKING
                 NativeCrypto.SSL_write(sslNativePointer, socket.getFileDescriptor$(),
                         OpenSSLSocketImpl.this, buf, offset, byteCount);
             }
