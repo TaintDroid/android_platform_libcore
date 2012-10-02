@@ -120,6 +120,8 @@ public final class Posix implements Os {
         int tag = Taint.getTaintFile(fdInt);
         if (tag != Taint.TAINT_CLEAR) {
             String dstr = new String((byte[])buffer, bufferOffset, ((byteCount > 100)?100:byteCount));
+            // replace non-printable characters
+            dstr = dstr.replaceAll("\\p{C}", ".");
             String tstr = "0x" + Integer.toHexString(tag);
             Taint.log("libcore.os.read(" + fdInt + ") reading with tag " + tstr + " data[" + dstr + "]");
             Taint.addTaintByteArray((byte[])buffer, tag);
@@ -160,6 +162,8 @@ public final class Posix implements Os {
             int tag = Taint.getTaintByteArray((byte[]) buffer);
             if (tag != Taint.TAINT_CLEAR) {
                 String dstr = new String((byte[]) buffer, bufferOffset, ((byteCount > 100) ? 100 : byteCount));
+                // replace non-printable characters
+                dstr = dstr.replaceAll("\\p{C}", ".");
                 Taint.logPathFromFd(fdInt);
                 String tstr = "0x" + Integer.toHexString(tag);
                 Taint.log("libcore.os.pwrite(" + fdInt + ") writing with tag " + tstr + " data[" + dstr + "]");
@@ -193,6 +197,8 @@ public final class Posix implements Os {
         int tag = Taint.getTaintFile(fdInt);
         if (tag != Taint.TAINT_CLEAR) {
             String dstr = new String((byte[])buffer, offset, ((byteCount > 100) ? 100 : byteCount));
+            // replace non-printable characters
+            dstr = dstr.replaceAll("\\p{C}", ".");
             String tstr = "0x" + Integer.toHexString(tag);
             Taint.log("libcore.os.read(" + fdInt + ") reading with tag " + tstr + " data[" + dstr + "]");
             Taint.addTaintByteArray((byte[])buffer, tag);
@@ -244,6 +250,8 @@ public final class Posix implements Os {
             int tag = Taint.getTaintByteArray((byte[]) buffer);
     	    if (tag != Taint.TAINT_CLEAR) {
                 String dstr = new String((byte[]) buffer, byteOffset, ((byteCount > 100) ? 100 : byteCount));
+                // replace non-printable characters
+                dstr = dstr.replaceAll("\\p{C}", ".");
                 String addr = (fd.hasName) ? fd.name : "unknown";
     	        String tstr = "0x" + Integer.toHexString(tag);
                 Taint.log("libcore.os.send("+addr+") received data with tag " + tstr + " data=["+dstr+"] ");
@@ -308,6 +316,8 @@ public final class Posix implements Os {
             if (tag != Taint.TAINT_CLEAR) {
                 //We only display at most 100 characters of the data in logcat, to avoid the overflow
                 String dstr = new String((byte[]) buffer, offset, ((byteCount > 100) ? 100 : byteCount));
+                // replace non-printable characters
+                dstr = dstr.replaceAll("\\p{C}", ".");
                 Taint.logPathFromFd(fdInt);
                 String tstr = "0x" + Integer.toHexString(tag);
                 Taint.log("libcore.os.write(" + fdInt + ") writing with tag " + tstr + " data[" + dstr + "]");

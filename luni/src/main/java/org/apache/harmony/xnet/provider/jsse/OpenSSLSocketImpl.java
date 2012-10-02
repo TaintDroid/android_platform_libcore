@@ -710,6 +710,8 @@ public class OpenSSLSocketImpl
                 if (dstr.length() > 100) {
                     dstr = dstr.substring(0, 100);                                                              
                 }
+                // replace non-printable characters
+                dstr = dstr.replaceAll("\\p{C}", ".");
                 String addr = (fd.hasName) ? fd.name : "unknown";
                 String tstr = "0x" + Integer.toHexString(tag);
                 Taint.log("SSLOutputStream.write(" + addr + ") received data with tag " + tstr + " data=[" + dstr + "]");
@@ -739,8 +741,10 @@ public class OpenSSLSocketImpl
                     if (byteCount > 100) {
                         disLen = 100;
                     }
-                    // We only display at most 100 charaters in logcat
+                    // We only display at most 100 characters in logcat
                     String dstr = new String(buf, offset, disLen);
+                    // replace non-printable characters
+                    dstr = dstr.replaceAll("\\p{C}", ".");
                     String addr = (fd.hasName) ? fd.name : "unknown";
                     String tstr = "0x" + Integer.toHexString(tag);
                     Taint.log("SSLOutputStream.write(" + addr + ") received data with tag " + tstr + " data=[" + dstr + "]");
