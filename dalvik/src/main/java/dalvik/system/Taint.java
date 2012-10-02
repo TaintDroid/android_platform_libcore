@@ -28,9 +28,9 @@ import java.nio.ByteBuffer;
  */
 public final class Taint {
 
-    public static final int TAINT_CLEAR		= 0x00000000;
-    public static final int TAINT_LOCATION	= 0x00000001;
-    public static final int TAINT_CONTACTS	= 0x00000002;
+    public static final int TAINT_CLEAR         = 0x00000000;
+    public static final int TAINT_LOCATION      = 0x00000001;
+    public static final int TAINT_CONTACTS      = 0x00000002;
     public static final int TAINT_MIC           = 0x00000004;
     public static final int TAINT_PHONE_NUMBER  = 0x00000008;
     public static final int TAINT_LOCATION_GPS  = 0x00000010;
@@ -147,7 +147,7 @@ public final class Taint {
     native public static void addTaintDoubleArray(double[] array, int tag);
     
     /**
-     * Add taint to a primiative boolean value. Only the return value has the
+     * Add taint to a primitive boolean value. Only the return value has the
      * updated taint tag.
      *
      * @param val
@@ -159,7 +159,7 @@ public final class Taint {
     native public static boolean addTaintBoolean(boolean val, int tag);
     
     /**
-     * Add taint to a primiative char value. Only the return value has the
+     * Add taint to a primitive char value. Only the return value has the
      * updated taint tag.
      *
      * @param val
@@ -171,7 +171,7 @@ public final class Taint {
     native public static char addTaintChar(char val, int tag);
     
     /**
-     * Add taint to a primiative byte value. Only the return value has the
+     * Add taint to a primitive byte value. Only the return value has the
      * updated taint tag.
      *
      * @param val
@@ -183,7 +183,7 @@ public final class Taint {
     native public static byte addTaintByte(byte val, int tag);
 
     /**
-     * Add taint to a primiative int value. Only the return value has the
+     * Add taint to a primitive int value. Only the return value has the
      * updated taint tag.
      *
      * @param val
@@ -195,7 +195,7 @@ public final class Taint {
     native public static int addTaintInt(int val, int tag);
 
     /**
-     * Add taint to a primiative long value. Only the return value has the
+     * Add taint to a primitive long value. Only the return value has the
      * updated taint tag.
      *
      * @param val
@@ -207,7 +207,7 @@ public final class Taint {
     native public static long addTaintLong(long val, int tag);
 
     /**
-     * Add taint to a primiative float value. Only the return value has the
+     * Add taint to a primitive float value. Only the return value has the
      * updated taint tag.
      *
      * @param val
@@ -219,7 +219,7 @@ public final class Taint {
     native public static float addTaintFloat(float val, int tag);
 
     /**
-     * Add taint to a primiative double value. Only the return value has the
+     * Add taint to a primitive double value. Only the return value has the
      * updated taint tag.
      *
      * @param val
@@ -336,7 +336,7 @@ public final class Taint {
     native public static int getTaintDoubleArray(double[] array);
 
     /**
-     * Get the current taint tag from a primiative boolean.
+     * Get the current taint tag from a primitive boolean.
      *
      * @param val
      *	    the target boolean
@@ -345,7 +345,7 @@ public final class Taint {
     native public static int getTaintBoolean(boolean val);
 
     /**
-     * Get the current taint tag from a primiative char.
+     * Get the current taint tag from a primitive char.
      *
      * @param val
      *	    the target char 
@@ -354,7 +354,7 @@ public final class Taint {
     native public static int getTaintChar(char val);
 
     /**
-     * Get the current taint tag from a primiative byte.
+     * Get the current taint tag from a primitive byte.
      *
      * @param val
      *	    the target byte 
@@ -363,7 +363,7 @@ public final class Taint {
     native public static int getTaintByte(byte val);
 
     /**
-     * Get the current taint tag from a primiative int.
+     * Get the current taint tag from a primitive int.
      *
      * @param val
      *	    the target int 
@@ -372,7 +372,7 @@ public final class Taint {
     native public static int getTaintInt(int val);
 
     /**
-     * Get the current taint tag from a primiative long.
+     * Get the current taint tag from a primitive long.
      *
      * @param val
      *	    the target long 
@@ -381,7 +381,7 @@ public final class Taint {
     native public static int getTaintLong(long val);
 
     /**
-     * Get the current taint tag from a primiative float.
+     * Get the current taint tag from a primitive float.
      *
      * @param val
      *	    the target float 
@@ -390,7 +390,7 @@ public final class Taint {
     native public static int getTaintFloat(float val);
 
     /**
-     * Get the current taint tag from a primiative double.
+     * Get the current taint tag from a primitive double.
      *
      * @param val
      *	    the target double 

@@ -121,7 +121,7 @@ public final class Posix implements Os {
         if (tag != Taint.TAINT_CLEAR) {
             String dstr = new String((byte[])buffer, bufferOffset, ((byteCount > 100)?100:byteCount));
             String tstr = "0x" + Integer.toHexString(tag);
-            Taint.log("libcore.os.read(" + fdInt + "): reading with tag " + tstr + " data[" + dstr + "]");
+            Taint.log("libcore.os.read(" + fdInt + ") reading with tag " + tstr + " data[" + dstr + "]");
             Taint.addTaintByteArray((byte[])buffer, tag);
         }
         return bytesRead;
@@ -135,7 +135,7 @@ public final class Posix implements Os {
                 int fdInt = fd.getDescriptor();
                 Taint.logPathFromFd(fdInt);
                 String tstr = "0x" + Integer.toHexString(tag);
-                Taint.log("libcore.os.pwrite a direct ByteBuffer with taint tag " + tstr);
+                Taint.log("libcore.os.pwrite(" + fdInt + ") writing a direct ByteBuffer with tag " + tstr);
             }
 // end WITH_TAINT_TRACKING
             return pwriteBytes(fd, buffer, buffer.position(), buffer.remaining(), offset);
@@ -162,7 +162,7 @@ public final class Posix implements Os {
                 String dstr = new String((byte[]) buffer, bufferOffset, ((byteCount > 100) ? 100 : byteCount));
                 Taint.logPathFromFd(fdInt);
                 String tstr = "0x" + Integer.toHexString(tag);
-                Taint.log("libcore.os.pwrite byte array(" + fdInt + "): writing with tag " + tstr + " data[" + dstr + "]");
+                Taint.log("libcore.os.pwrite(" + fdInt + ") writing with tag " + tstr + " data[" + dstr + "]");
             }
         }
         int bytesWritten = pwriteBytesImpl(fd, buffer, bufferOffset, byteCount, offset);
@@ -194,7 +194,7 @@ public final class Posix implements Os {
         if (tag != Taint.TAINT_CLEAR) {
             String dstr = new String((byte[])buffer, offset, ((byteCount > 100) ? 100 : byteCount));
             String tstr = "0x" + Integer.toHexString(tag);
-            Taint.log("libcore.os.read(" + fdInt + "): reading with tag " + tstr + " data[" + dstr + "]");
+            Taint.log("libcore.os.read(" + fdInt + ") reading with tag " + tstr + " data[" + dstr + "]");
             Taint.addTaintByteArray((byte[])buffer, tag);
         }
         return bytesRead;
@@ -223,7 +223,7 @@ public final class Posix implements Os {
             if (tag != Taint.TAINT_CLEAR) {
                 String addr = (fd.hasName) ? fd.name : "unknown";
                 String tstr = "0x" + Integer.toHexString(tag);
-                Taint.log("libcore.os.sendto: send a direct ByteBuffer with taint tag " + tstr);
+                Taint.log("libcore.os.sendto(" + addr + ") received a ByteBuffer with tag " + tstr);
             }
 // end WITH_TAINT_TRACKING
             return sendtoBytes(fd, buffer, buffer.position(), buffer.remaining(), flags, inetAddress, port);
@@ -281,7 +281,7 @@ public final class Posix implements Os {
                 int fdInt = fd.getDescriptor();
                 Taint.logPathFromFd(fdInt);
                 String tstr = "0x" + Integer.toHexString(tag);
-                Taint.log("libcore.os.write a direct ByteBuffer in (" + fdInt + "): writing with tag " + tstr);
+                Taint.log("libcore.os.write(" + fdInt + ") writing a direct ByteBuffer with tag " + tstr);
             }
 // end WITH_TAINT_TRACKING
             return writeBytes(fd, buffer, buffer.position(), buffer.remaining());
@@ -310,7 +310,7 @@ public final class Posix implements Os {
                 String dstr = new String((byte[]) buffer, offset, ((byteCount > 100) ? 100 : byteCount));
                 Taint.logPathFromFd(fdInt);
                 String tstr = "0x" + Integer.toHexString(tag);
-                Taint.log("libcore.os.write byte array(" + fdInt + "): writing with tag " + tstr + " data[" + dstr + "]");
+                Taint.log("libcore.os.write(" + fdInt + ") writing with tag " + tstr + " data[" + dstr + "]");
             }
         }
         int bytesWritten = writeBytesImpl(fd, buffer, offset, byteCount);
