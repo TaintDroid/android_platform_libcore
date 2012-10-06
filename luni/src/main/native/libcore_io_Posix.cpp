@@ -832,7 +832,9 @@ static void Posix_mkdir(JNIEnv* env, jobject, jstring javaPath, jint mode) {
     }
 #ifdef WITH_TAINT_TRACKING
     // In case the SDcard is ext2, make sure it is 777
-    if ((strncmp(path.c_str(), "/sdcard/", 8) == 0) || (strncmp(path.c_str(), "/mnt/sdcard/", 12) == 0)) {
+    if ((strncmp(path.c_str(), "/sdcard", sizeof("/sdcard")-1) == 0) ||
+         (strncmp(path.c_str(), "/mnt/sdcard", sizeof("/mnt/sdcard")-1)==0) ||
+         (strncmp(path.c_str(), "/storage/sdcard", sizeof("/storage/sdcard")-1)==0)) {
         //return (mkdir(path.c_str(), S_IRWXU|S_IRWXG|S_IRWXO) == 0);
         throwIfMinusOne(env, "mkdir", TEMP_FAILURE_RETRY(mkdir(path.c_str(), S_IRWXU|S_IRWXG|S_IRWXO)));
     } else if (strncmp(path.c_str(), "/data/taintwall", 15) == 0) {
@@ -882,7 +884,9 @@ static jobject Posix_open(JNIEnv* env, jobject, jstring javaPath, jint flags, ji
     }
 #ifdef WITH_TAINT_TRACKING
     // Ensure /sdcard always acts like FAT, even if it is ext2
-    if( (strncmp(path.c_str(), "/sdcard/", 8) == 0) || (strncmp(path.c_str(), "/mnt/sdcard/", 12) == 0)) {
+    if ((strncmp(path.c_str(), "/sdcard", sizeof("/sdcard")-1) == 0) ||
+         (strncmp(path.c_str(), "/mnt/sdcard", sizeof("/mnt/sdcard")-1)==0) ||
+         (strncmp(path.c_str(), "/storage/sdcard", sizeof("/storage/sdcard")-1)==0)) {
     	mode = 0777;
     }
 
