@@ -706,9 +706,9 @@ public class OpenSSLSocketImpl
             FileDescriptor fd = socket.getFileDescriptor$();
             if (tag != Taint.TAINT_CLEAR) {
                 String dstr = String.valueOf(oneByte);
-                // We only display at most 100 characters in logcat of data
-                if (dstr.length() > 100) {
-                    dstr = dstr.substring(0, 100);                                                              
+                // We only display at most Taint.dataBytesToLog characters in logcat of data
+                if (dstr.length() > Taint.dataBytesToLog) {
+                    dstr = dstr.substring(0, Taint.dataBytesToLog);                                                              
                 }
                 // replace non-printable characters
                 dstr = dstr.replaceAll("\\p{C}", ".");
@@ -738,10 +738,10 @@ public class OpenSSLSocketImpl
                 FileDescriptor fd = socket.getFileDescriptor$();
                 if (tag != Taint.TAINT_CLEAR) {
                     int disLen = byteCount;
-                    if (byteCount > 100) {
-                        disLen = 100;
+                    if (byteCount > Taint.dataBytesToLog) {
+                        disLen = Taint.dataBytesToLog;
                     }
-                    // We only display at most 100 characters in logcat
+                    // We only display at most Taint.dataBytesToLog characters in logcat
                     String dstr = new String(buf, offset, disLen);
                     // replace non-printable characters
                     dstr = dstr.replaceAll("\\p{C}", ".");

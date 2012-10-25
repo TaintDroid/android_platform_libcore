@@ -45,6 +45,9 @@ public final class Taint {
     public static final int TAINT_DEVICE_SN     = 0x00002000;
     public static final int TAINT_ACCOUNT       = 0x00004000;
     public static final int TAINT_HISTORY       = 0x00008000;
+    
+    // how many bytes of tainted network output data to print to log?
+    public static final int dataBytesToLog = 100;
 
     /**
      * Updates the target String's taint tag.
@@ -95,6 +98,20 @@ public final class Taint {
      *	    tag to update (bitwise or) onto the byte array
      */
     native public static void addTaintByteArray(byte[] array, int tag);
+    
+    /**
+     * Updates the target direct ByteBuffer's taint tag.
+     *
+     * @param dByteBuffer 
+     *	    the target direct ByteBuffer
+     * @param tag
+     *      tag to update (bitwise or) onto the direct ByteBuffer
+     */
+    public static void addTaintDirectByteBuffer(ByteBuffer dByteBuffer, int tag) {
+        if (dByteBuffer.isDirect()) {
+            dByteBuffer.addDirectByteBufferTaint(tag);
+        }
+    }
 
     /**
      * Updates the target int array's taint tag.

@@ -297,7 +297,7 @@ class MemoryBlock {
 
     public final void pokeInt(int offset, int value, ByteOrder order) {
 // begin WITH_TAINT_TRACKING
-        taint = taint | Taint.getTaintInt(value);
+        addTaint(Taint.getTaintInt(value));
 // end WITH_TAINT_TRACKING
         Memory.pokeInt(address + offset, value, order.needsSwap);
     }
