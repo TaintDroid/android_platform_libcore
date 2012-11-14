@@ -333,6 +333,10 @@ public final class IntegralToString {
         if (i == n) {
             return convertInt(sb, i);
         }
+        
+// begin WITH_TAINT_TRACKING
+        int taint = Taint.getTaintLong(n);
+// end WITH_TAINT_TRACKING
 
         boolean negative = (n < 0);
         if (negative) {
@@ -340,6 +344,9 @@ public final class IntegralToString {
             if (n < 0) {
                 // If -n is still negative, n is Long.MIN_VALUE
                 String quickResult = "-9223372036854775808";
+// begin WITH_TAINT_TRACKING
+                Taint.addTaintString(quickResult, taint);
+// end WITH_TAINT_TRACKING
                 if (sb != null) {
                     sb.append0(quickResult);
                     return null;
@@ -403,7 +410,11 @@ public final class IntegralToString {
             sb.append0(buf, cursor, bufLen - cursor);
             return null;
         } else {
-            return new String(cursor, bufLen - cursor, buf);
+// begin WITH_TAINT_TRACKING
+            String ret = new String(cursor, bufLen - cursor, buf);
+            Taint.addTaintString(ret, taint);
+            return ret;
+// end WITH_TAINT_TRACKING
         }
     }
 

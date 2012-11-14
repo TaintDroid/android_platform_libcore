@@ -591,7 +591,7 @@ outer:
     public native char charAt_intrinsic(int index);
     
     public char charAt(int index) {
-        return charAt_intrinsic(index);
+        return Taint.addTaintChar(charAt_intrinsic(index), Taint.getTaintString(this)|Taint.getTaintInt(index));
     }
 // end WITH_TAINT_TRACKING
 
