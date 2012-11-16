@@ -138,6 +138,7 @@ public final class Posix implements Os {
                 Taint.logPathFromFd(fdInt);
                 String tstr = "0x" + Integer.toHexString(tag);
                 Taint.log("libcore.os.pwrite(" + fdInt + ") writing a direct ByteBuffer with tag " + tstr);
+                Taint.addTaintFile(fdInt, tag);
             }
 // end WITH_TAINT_TRACKING
             return pwriteBytes(fd, buffer, buffer.position(), buffer.remaining(), offset);
@@ -167,6 +168,7 @@ public final class Posix implements Os {
                 Taint.logPathFromFd(fdInt);
                 String tstr = "0x" + Integer.toHexString(tag);
                 Taint.log("libcore.os.pwrite(" + fdInt + ") writing with tag " + tstr + " data[" + dstr + "]");
+                Taint.addTaintFile(fdInt, tag);
             }
         }
         int bytesWritten = pwriteBytesImpl(fd, buffer, bufferOffset, byteCount, offset);
@@ -290,6 +292,7 @@ public final class Posix implements Os {
                 Taint.logPathFromFd(fdInt);
                 String tstr = "0x" + Integer.toHexString(tag);
                 Taint.log("libcore.os.write(" + fdInt + ") writing a direct ByteBuffer with tag " + tstr);
+                Taint.addTaintFile(fdInt, tag);
             }
 // end WITH_TAINT_TRACKING
             return writeBytes(fd, buffer, buffer.position(), buffer.remaining());
@@ -321,6 +324,7 @@ public final class Posix implements Os {
                 Taint.logPathFromFd(fdInt);
                 String tstr = "0x" + Integer.toHexString(tag);
                 Taint.log("libcore.os.write(" + fdInt + ") writing with tag " + tstr + " data[" + dstr + "]");
+                Taint.addTaintFile(fdInt, tag);
             }
         }
         int bytesWritten = writeBytesImpl(fd, buffer, offset, byteCount);
