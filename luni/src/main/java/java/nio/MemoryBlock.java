@@ -278,20 +278,18 @@ class MemoryBlock {
 // end WITH_TAINT_TRACKING
     }
 
-// PJG: FIXME: why disabled for Short?
-
     public final void pokeShort(int offset, short value, ByteOrder order) {
 // begin WITH_TAINT_TRACKING
-//        addTaint(Taint.getTaintShort(value));
+        addTaint(Taint.getTaintShort(value));
 // end WITH_TAINT_TRACKING
         Memory.pokeShort(address + offset, value, order.needsSwap);
     }
 
     public final short peekShort(int offset, ByteOrder order) {
 // begin WITH_TAINT_TRACKING
-        return Memory.peekShort(address + offset, order.needsSwap);
-//        short val = Memory.peekShort(address + offset, order.needsSwap);
-//        return Taint.addTaintShort(val, taint);
+//        return Memory.peekShort(address + offset, order.needsSwap);
+        short val = Memory.peekShort(address + offset, order.needsSwap);
+        return Taint.addTaintShort(val, taint);
 // end WITH_TAINT_TRACKING
     }
 

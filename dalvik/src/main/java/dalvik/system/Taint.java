@@ -210,6 +210,18 @@ public final class Taint {
      * @return val with the added taint tag
      */
     native public static int addTaintInt(int val, int tag);
+    
+    /**
+     * Add taint to a primitive short value. Only the return value has the
+     * updated taint tag.
+     *
+     * @param val
+     *	    the input value
+     * @param tag
+     *	    tag to add (bitwise or) onto the input value
+     * @return val with the added taint tag
+     */
+    native public static short addTaintShort(short val, int tag);
 
     /**
      * Add taint to a primitive long value. Only the return value has the
@@ -387,6 +399,15 @@ public final class Taint {
      * @return the taint tag
      */
     native public static int getTaintInt(int val);
+    
+    /**
+     * Get the current taint tag from a primitive short.
+     *
+     * @param val
+     *	    the target short 
+     * @return the taint tag
+     */
+    native public static int getTaintShort(short val);
 
     /**
      * Get the current taint tag from a primitive long.
