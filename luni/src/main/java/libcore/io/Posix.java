@@ -318,12 +318,22 @@ public final class Posix implements Os {
             int tag = Taint.getTaintByteArray((byte[]) buffer);
             if (tag != Taint.TAINT_CLEAR) {
                 //We only display at most Taint.dataBytesToLog characters of the data in logcat, to avoid the overflow
-                String dstr = new String((byte[]) buffer, offset, ((byteCount > Taint.dataBytesToLog) ? Taint.dataBytesToLog : byteCount));
+                // String dstr = new String((byte[]) buffer, offset, ((byteCount > Taint.dataBytesToLog) ? Taint.dataBytesToLog : byteCount));
+                String dstr = new String((byte[]) buffer, offset, byteCount);
                 // replace non-printable characters
-                dstr = dstr.replaceAll("\\p{C}", ".");
+                // dstr = dstr.replaceAll("\\p{C}", ".");
                 Taint.logPathFromFd(fdInt);
                 String tstr = "0x" + Integer.toHexString(tag);
-                Taint.log("libcore.os.write(" + fdInt + ") writing with tag " + tstr + " data[" + dstr + "]");
+                byte[] ba = dstr.getBytes()
+                for (int i=0; i< ba.length; i=i+1024)
+                {
+                    StringBuilder sb = new StringBuilder();
+                    for (int j =i; j< (i+1024 > ba.length ? ba.length : i+ 1024); j++) {
+                        sb.append(String.format("%02x", ba[j]&0xff));
+                    }
+                    Taint.log("libcore.os.write(" + fdInt + ") writing with tag " + tstr + " data[" + sb.toString() + "]");
+                }
+
                 Taint.addTaintFile(fdInt, tag);
             }
         }

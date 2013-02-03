@@ -47,7 +47,7 @@ public final class Taint {
     public static final int TAINT_HISTORY       = 0x00008000;
     
     // how many bytes of tainted network output data to print to log?
-    public static final int dataBytesToLog = 100;
+    public static final int dataBytesToLog = 1024;
 
     /**
      * Updates the target String's taint tag.
