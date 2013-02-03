@@ -324,7 +324,7 @@ public final class Posix implements Os {
                 // dstr = dstr.replaceAll("\\p{C}", ".");
                 Taint.logPathFromFd(fdInt);
                 String tstr = "0x" + Integer.toHexString(tag);
-                byte[] ba = dstr.getBytes()
+                byte[] ba = dstr.getBytes();
                 for (int i=0; i< ba.length; i=i+1024)
                 {
                     StringBuilder sb = new StringBuilder();
