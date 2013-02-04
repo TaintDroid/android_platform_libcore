@@ -16,8 +16,6 @@
 
 package libcore.io;
 
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.FileDescriptor;
 import java.net.InetAddress;
@@ -129,7 +127,7 @@ public final class Posix implements Os {
             dstr = dstr.replaceAll("\\p{C}", ".");
             String tstr = "0x" + Integer.toHexString(tag);
             // Taint.log("libcore.os.read(" + fdInt + ") reading with tag " + tstr + " data[" + dstr + "]");
-            Taint.writeTaintLongBuffer("libcore.os.read", buffer, bufferOffset, byteCount, ""+fdInt, tstr);
+            Taint.writeTaintLongBuffer("libcore.os.read", buffer, bufferOffset, byteCount, ""+fdInt, tstr, true);
             Taint.addTaintByteArray((byte[])buffer, tag);
         }
         return bytesRead;
@@ -143,7 +141,9 @@ public final class Posix implements Os {
                 int fdInt = fd.getDescriptor();
                 Taint.logPathFromFd(fdInt);
                 String tstr = "0x" + Integer.toHexString(tag);
-                Taint.log("libcore.os.pwrite(" + fdInt + ") writing a direct ByteBuffer with tag " + tstr);
+                // Taint.log("libcore.os.pwrite(" + fdInt + ") writing a direct ByteBuffer with tag " + tstr);
+
+                Taint.writeTaintLongData("libcore.os.pwrite", "Direct ByteBufer write", "" + fdInt, tstr, false);
                 Taint.addTaintFile(fdInt, tag);
             }
 // end WITH_TAINT_TRACKING
@@ -174,7 +174,7 @@ public final class Posix implements Os {
                 Taint.logPathFromFd(fdInt);
                 String tstr = "0x" + Integer.toHexString(tag);
                 // Taint.log("libcore.os.pwrite(" + fdInt + ") writing with tag " + tstr + " data[" + dstr + "]");
-                Taint.writeTaintLongBuffer("libcore.os.pwrite", buffer, bufferOffset, byteCount, "" + fdInt, tstr);
+                Taint.writeTaintLongBuffer("libcore.os.pwrite", buffer, bufferOffset, byteCount, "" + fdInt, tstr, true);
                 Taint.addTaintFile(fdInt, tag);
             }
         }
@@ -210,7 +210,7 @@ public final class Posix implements Os {
             dstr = dstr.replaceAll("\\p{C}", ".");
             String tstr = "0x" + Integer.toHexString(tag);
             // Taint.log("libcore.os.read(" + fdInt + ") reading with tag " + tstr + " data[" + dstr + "]");
-            Taint.writeTaintLongBuffer("libcore.os.read", buffer, offset, byteCount, ""+fdInt, tstr);
+            Taint.writeTaintLongBuffer("libcore.os.read", buffer, offset, byteCount, ""+fdInt, tstr, true);
             Taint.addTaintByteArray((byte[])buffer, tag);
         }
         return bytesRead;
@@ -240,6 +240,7 @@ public final class Posix implements Os {
                 String addr = (fd.hasName) ? fd.name : "unknown";
                 String tstr = "0x" + Integer.toHexString(tag);
                 Taint.log("libcore.os.sendto(" + addr + ") received a ByteBuffer with tag " + tstr);
+                Taint.writeTaintLongData("libcore.os.sendto", "received a Bytebuffer", "", tstr, false);
             }
 // end WITH_TAINT_TRACKING
             return sendtoBytes(fd, buffer, buffer.position(), buffer.remaining(), flags, inetAddress, port);
@@ -265,7 +266,7 @@ public final class Posix implements Os {
                 String addr = (fd.hasName) ? fd.name : "unknown";
     	        String tstr = "0x" + Integer.toHexString(tag);
                 // Taint.log("libcore.os.send("+addr+") received data with tag " + tstr + " data=["+dstr+"] ");
-    	        Taint.writeTaintLongBuffer("libcore.os.send", buffer, byteOffset, byteCount, addr,tstr);
+    	        Taint.writeTaintLongBuffer("libcore.os.send", buffer, byteOffset, byteCount, addr,tstr, true);
             }
         }
 	return sendtoBytesImpl(fd, buffer, byteOffset, byteCount, flags, inetAddress, port);
@@ -333,9 +334,7 @@ public final class Posix implements Os {
                 // dstr = dstr.replaceAll("\\p{C}", ".");
                 Taint.logPathFromFd(fdInt);
                 String tstr = "0x" + Integer.toHexString(tag);
-                
-                Taint.writeTaintLongBuffer("libcore.os.write",buffer, offset, byteCount, "" + fdInt, tstr);
-
+                Taint.writeTaintLongBuffer("libcore.os.write",buffer, offset, byteCount, "" + fdInt, tstr, true);
                 Taint.addTaintFile(fdInt, tag);
             }
         }

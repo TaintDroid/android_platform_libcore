@@ -509,7 +509,7 @@ public final class Taint {
      * @param sTag
      *      Taint Tag for the buff
      */
-    public static void writeTaintLongBuffer(String fn, Object buffer, int offset, int byteCount, String fd, String sTag)
+    public static void writeTaintLongBuffer(String fn, Object buffer, int offset, int byteCount, String fd, String sTag, boolean isHex)
     {
         for (int i=0; i< byteCount; i=i+Taint.dataBytesToLog)
         {
@@ -517,22 +517,31 @@ public final class Taint {
             String dstr = new String((byte[]) buffer, offset + i, iDataLen );
             byte[] ba = dstr.getBytes();
             StringBuilder sb = new StringBuilder();
-            
-            for (byte b: ba) {
-                sb.append(String.format("%02x", b & 0xff));
+            String mydata = null;
+            if (isHex == true)
+            {
+                for (byte b: ba) {
+                    sb.append(String.format("%02x", b & 0xff));
+                }
+                mydata = sb.toString();
             }
+            else
+            {
+                mydata = dstr;
+            }
+
             String logData = null;
             try {
                 logData = new JSONObject()
                                 .put( "fn",   fn )
                                 .put( "fd",   fd )
                                 .put( "tag",  sTag )
-                                .put( "data", sb.toString() )
+                                .put( "data", mydata )
+                                .put("hex", isHex)
                                 .toString();
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-                            
             Taint.log( "Cloudacl:" + logData );
         }
     }
@@ -549,7 +558,7 @@ public final class Taint {
      * @param sTag
      *      Taint Tag for the buff
      */
-    public static void writeTaintLongData(String fn, String data, String fd, String sTag)
+    public static void writeTaintLongData(String fn, String data, String fd, String sTag, boolean isHex)
     {
         
         for (int i=0; i< data.length(); i=i+Taint.dataBytesToLog)
@@ -558,9 +567,18 @@ public final class Taint {
             String dstr = data.substring(i, i + iDataLen);
             byte[] ba = dstr.getBytes();
             StringBuilder sb = new StringBuilder();
+            String mydata = null;
             
-            for (byte b: ba) {
-                sb.append(String.format("%02x", b & 0xff));
+            if (isHex == true) {
+                for (byte b : ba)
+                {
+                    sb.append(String.format("%02x", b & 0xff));
+                }
+                mydata = sb.toString();
+            }
+            else
+            {
+                mydata = dstr;
             }
             String logData = null;
             try {
@@ -568,7 +586,8 @@ public final class Taint {
                                 .put( "fn",   fn )
                                 .put( "fd",   fd )
                                 .put( "tag",  sTag )
-                                .put( "data", sb.toString() )
+                                .put( "data", mydata )
+                                .put("hex", isHex)
                                 .toString();
             } catch (JSONException e) {
                 e.printStackTrace();
