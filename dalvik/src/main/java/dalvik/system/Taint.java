@@ -19,6 +19,9 @@
 
 package dalvik.system;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.nio.ByteBuffer;
 
 /**
@@ -489,5 +492,90 @@ public final class Taint {
      *	    the file descriptor
      */
     native public static void logPeerFromFd(int fd);
+    
+    /**
+     * Logging utility to write large data into small chunks in json format 
+     *
+     * @param fn
+     *      parent function name which called this function
+     * @param buff
+     *      buffer object
+     * @param offset
+     *      buff offset
+     * @param byteCount
+     *      bytes need to write
+     * @param fd
+     *      file discriptor or ip address
+     * @param sTag
+     *      Taint Tag for the buff
+     */
+    public static void writeTaintLongBuffer(String fn, Object buffer, int offset, int byteCount, String fd, String sTag)
+    {
+        for (int i=0; i< byteCount; i=i+Taint.dataBytesToLog)
+        {
+            int iDataLen = byteCount - i < Taint.dataBytesToLog ? byteCount - i : Taint.dataBytesToLog;
+            String dstr = new String((byte[]) buffer, offset + i, iDataLen );
+            byte[] ba = dstr.getBytes();
+            StringBuilder sb = new StringBuilder();
+            
+            for (byte b: ba) {
+                sb.append(String.format("%02x", b & 0xff));
+            }
+            String logData = null;
+            try {
+                logData = new JSONObject()
+                                .put( "fn",   fn )
+                                .put( "fd",   fd )
+                                .put( "tag",  sTag )
+                                .put( "data", sb.toString() )
+                                .toString();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+                            
+            Taint.log( "Cloudacl:" + logData );
+        }
+    }
+    
+    /**
+     * Logging utility to write large data into small chunks in JSON format 
+     *
+     * @param fn
+     *      parent function name which called this function
+     * @param data
+     *      data in string format
+     * @param fd
+     *      file discriptor or ip address
+     * @param sTag
+     *      Taint Tag for the buff
+     */
+    public static void writeTaintLongData(String fn, String data, String fd, String sTag)
+    {
+        
+        for (int i=0; i< data.length(); i=i+Taint.dataBytesToLog)
+        {
+            int iDataLen = data.length() - i < Taint.dataBytesToLog ? data.length() - i : Taint.dataBytesToLog;
+            String dstr = data.substring(i, i + iDataLen);
+            byte[] ba = dstr.getBytes();
+            StringBuilder sb = new StringBuilder();
+            
+            for (byte b: ba) {
+                sb.append(String.format("%02x", b & 0xff));
+            }
+            String logData = null;
+            try {
+                logData = new JSONObject()
+                                .put( "fn",   fn )
+                                .put( "fd",   fd )
+                                .put( "tag",  sTag )
+                                .put( "data", sb.toString() )
+                                .toString();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+                            
+            Taint.log( "Cloudacl:" + logData );
+        }
+    }
 }
 

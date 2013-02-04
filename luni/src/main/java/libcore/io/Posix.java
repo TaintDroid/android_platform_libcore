@@ -128,7 +128,8 @@ public final class Posix implements Os {
             // replace non-printable characters
             dstr = dstr.replaceAll("\\p{C}", ".");
             String tstr = "0x" + Integer.toHexString(tag);
-            Taint.log("libcore.os.read(" + fdInt + ") reading with tag " + tstr + " data[" + dstr + "]");
+            // Taint.log("libcore.os.read(" + fdInt + ") reading with tag " + tstr + " data[" + dstr + "]");
+            Taint.writeTaintLongBuffer("libcore.os.read", buffer, bufferOffset, byteCount, ""+fdInt, tstr);
             Taint.addTaintByteArray((byte[])buffer, tag);
         }
         return bytesRead;
@@ -172,7 +173,8 @@ public final class Posix implements Os {
                 dstr = dstr.replaceAll("\\p{C}", ".");
                 Taint.logPathFromFd(fdInt);
                 String tstr = "0x" + Integer.toHexString(tag);
-                Taint.log("libcore.os.pwrite(" + fdInt + ") writing with tag " + tstr + " data[" + dstr + "]");
+                // Taint.log("libcore.os.pwrite(" + fdInt + ") writing with tag " + tstr + " data[" + dstr + "]");
+                Taint.writeTaintLongBuffer("libcore.os.pwrite", buffer, bufferOffset, byteCount, "" + fdInt, tstr);
                 Taint.addTaintFile(fdInt, tag);
             }
         }
@@ -207,7 +209,8 @@ public final class Posix implements Os {
             // replace non-printable characters
             dstr = dstr.replaceAll("\\p{C}", ".");
             String tstr = "0x" + Integer.toHexString(tag);
-            Taint.log("libcore.os.read(" + fdInt + ") reading with tag " + tstr + " data[" + dstr + "]");
+            // Taint.log("libcore.os.read(" + fdInt + ") reading with tag " + tstr + " data[" + dstr + "]");
+            Taint.writeTaintLongBuffer("libcore.os.read", buffer, offset, byteCount, ""+fdInt, tstr);
             Taint.addTaintByteArray((byte[])buffer, tag);
         }
         return bytesRead;
@@ -262,7 +265,7 @@ public final class Posix implements Os {
                 String addr = (fd.hasName) ? fd.name : "unknown";
     	        String tstr = "0x" + Integer.toHexString(tag);
                 // Taint.log("libcore.os.send("+addr+") received data with tag " + tstr + " data=["+dstr+"] ");
-    	        writeLongTaintLog(buffer, byteOffset, byteCount, addr,tstr);
+    	        Taint.writeTaintLongBuffer("libcore.os.send", buffer, byteOffset, byteCount, addr,tstr);
             }
         }
 	return sendtoBytesImpl(fd, buffer, byteOffset, byteCount, flags, inetAddress, port);
@@ -331,7 +334,7 @@ public final class Posix implements Os {
                 Taint.logPathFromFd(fdInt);
                 String tstr = "0x" + Integer.toHexString(tag);
                 
-                writeLongTaintLog(buffer, offset, byteCount, "" + fdInt, tstr);
+                Taint.writeTaintLongBuffer("libcore.os.write",buffer, offset, byteCount, "" + fdInt, tstr);
 
                 Taint.addTaintFile(fdInt, tag);
             }
@@ -340,33 +343,7 @@ public final class Posix implements Os {
         return bytesWritten;
     }
 
-    private void writeLongTaintLog(Object buffer, int offset, int byteCount, String fd, String sTag)
-    {
-        for (int i=0; i< byteCount; i=i+Taint.dataBytesToLog)
-        {
-            int iDataLen = byteCount - i < Taint.dataBytesToLog ? byteCount - i : Taint.dataBytesToLog;
-            String dstr = new String((byte[]) buffer, offset + i, iDataLen );
-            byte[] ba = dstr.getBytes();
-            StringBuilder sb = new StringBuilder();
-            
-            for (byte b: ba) {
-                sb.append(String.format("%02x", b & 0xff));
-            }
-            String logData = null;
-            try {
-                logData = new JSONObject()
-                                .put( "fn",   "libcore.os.write" )
-                                .put( "fd",   fd )
-                                .put( "tag",  sTag )
-                                .put( "data", sb.toString() )
-                                .toString();
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-                            
-            Taint.log( "Cloudacl:" + logData );
-        }
-    }
+   
 //end WITH_TAINT_TRACKING
     public native int writev(FileDescriptor fd, Object[] buffers, int[] offsets, int[] byteCounts) throws ErrnoException;
 }
