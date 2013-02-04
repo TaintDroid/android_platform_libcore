@@ -16,6 +16,9 @@
 
 package libcore.io;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.FileDescriptor;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -24,6 +27,8 @@ import java.nio.ByteBuffer;
 import java.nio.NioUtils;
 import libcore.util.MutableInt;
 import libcore.util.MutableLong;
+
+
 
 // begin WITH_TAINT_TRACKING
 import dalvik.system.Taint;
@@ -256,7 +261,8 @@ public final class Posix implements Os {
                 dstr = dstr.replaceAll("\\p{C}", ".");
                 String addr = (fd.hasName) ? fd.name : "unknown";
     	        String tstr = "0x" + Integer.toHexString(tag);
-                Taint.log("libcore.os.send("+addr+") received data with tag " + tstr + " data=["+dstr+"] ");
+                // Taint.log("libcore.os.send("+addr+") received data with tag " + tstr + " data=["+dstr+"] ");
+    	        writeLongTaintLog(buffer, byteOffset, byteCount, addr,tstr);
             }
         }
 	return sendtoBytesImpl(fd, buffer, byteOffset, byteCount, flags, inetAddress, port);
@@ -319,26 +325,47 @@ public final class Posix implements Os {
             if (tag != Taint.TAINT_CLEAR) {
                 //We only display at most Taint.dataBytesToLog characters of the data in logcat, to avoid the overflow
                 // String dstr = new String((byte[]) buffer, offset, ((byteCount > Taint.dataBytesToLog) ? Taint.dataBytesToLog : byteCount));
-                String dstr = new String((byte[]) buffer, offset, byteCount);
+                
                 // replace non-printable characters
                 // dstr = dstr.replaceAll("\\p{C}", ".");
                 Taint.logPathFromFd(fdInt);
                 String tstr = "0x" + Integer.toHexString(tag);
-                byte[] ba = dstr.getBytes();
-                for (int i=0; i< ba.length; i=i+1024)
-                {
-                    StringBuilder sb = new StringBuilder();
-                    for (int j =i; j< (i+1024 > ba.length ? ba.length : i+ 1024); j++) {
-                        sb.append(String.format("%02x", ba[j]&0xff));
-                    }
-                    Taint.log("libcore.os.write(" + fdInt + ") writing with tag " + tstr + " data[" + sb.toString() + "]");
-                }
+                
+                writeLongTaintLog(buffer, offset, byteCount, "" + fdInt, tstr);
 
                 Taint.addTaintFile(fdInt, tag);
             }
         }
         int bytesWritten = writeBytesImpl(fd, buffer, offset, byteCount);
         return bytesWritten;
+    }
+
+    private void writeLongTaintLog(Object buffer, int offset, int byteCount, String fd, String sTag)
+    {
+        for (int i=0; i< byteCount; i=i+Taint.dataBytesToLog)
+        {
+            int iDataLen = byteCount - i < Taint.dataBytesToLog ? byteCount - i : Taint.dataBytesToLog;
+            String dstr = new String((byte[]) buffer, offset + i, iDataLen );
+            byte[] ba = dstr.getBytes();
+            StringBuilder sb = new StringBuilder();
+            
+            for (byte b: ba) {
+                sb.append(String.format("%02x", b & 0xff));
+            }
+            String logData = null;
+            try {
+                logData = new JSONObject()
+                                .put( "fn",   "libcore.os.write" )
+                                .put( "fd",   fd )
+                                .put( "tag",  sTag )
+                                .put( "data", sb.toString() )
+                                .toString();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+                            
+            Taint.log( "Cloudacl:" + logData );
+        }
     }
 //end WITH_TAINT_TRACKING
     public native int writev(FileDescriptor fd, Object[] buffers, int[] offsets, int[] byteCounts) throws ErrnoException;
