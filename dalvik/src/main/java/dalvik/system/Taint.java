@@ -19,6 +19,8 @@
 
 package dalvik.system;
 
+import com.android.internal.util.HexDump;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -50,7 +52,7 @@ public final class Taint {
     public static final int TAINT_HISTORY       = 0x00008000;
     
     // how many bytes of tainted network output data to print to log?
-    public static final int dataBytesToLog = 1024;
+    public static final int dataBytesToLog = 100;
 
     /**
      * Updates the target String's taint tag.
@@ -105,7 +107,7 @@ public final class Taint {
     /**
      * Updates the target direct ByteBuffer's taint tag.
      *
-     * @param dByteBuffer 
+     * @param dByteBuffer
      *	    the target direct ByteBuffer
      * @param tag
      *      tag to update (bitwise or) onto the direct ByteBuffer
@@ -274,7 +276,7 @@ public final class Taint {
     /**
      * Get the current taint tag from an Object array.
      *
-     * @param array 
+     * @param array
      *	    the target Object array
      * @return the taint tag
      */
@@ -283,7 +285,7 @@ public final class Taint {
     /**
      * Get the current taint tag from a boolean array.
      *
-     * @param array 
+     * @param array
      *	    the target boolean array
      * @return the taint tag
      */
@@ -292,7 +294,7 @@ public final class Taint {
     /**
      * Get the current taint tag from a char array.
      *
-     * @param array 
+     * @param array
      *	    the target char array
      * @return the taint tag
      */
@@ -301,7 +303,7 @@ public final class Taint {
     /**
      * Get the current taint tag from a byte array.
      *
-     * @param array 
+     * @param array
      *	    the target byte array
      * @return the taint tag
      */
@@ -310,7 +312,7 @@ public final class Taint {
     /**
      * Get the current taint tag from a direct ByteBuffer.
      *
-     * @param dByteBuffer 
+     * @param dByteBuffer
      *	    the target direct ByteBuffer
      * @return the taint tag
      */
@@ -325,7 +327,7 @@ public final class Taint {
     /**
      * Get the current taint tag from an int array.
      *
-     * @param array 
+     * @param array
      *	    the target int array
      * @return the taint tag
      */
@@ -334,7 +336,7 @@ public final class Taint {
     /**
      * Get the current taint tag from a short array.
      *
-     * @param array 
+     * @param array
      *	    the target short array
      * @return the taint tag
      */
@@ -343,7 +345,7 @@ public final class Taint {
     /**
      * Get the current taint tag from a long array.
      *
-     * @param array 
+     * @param array
      *	    the target long array
      * @return the taint tag
      */
@@ -352,7 +354,7 @@ public final class Taint {
     /**
      * Get the current taint tag from a float array.
      *
-     * @param array 
+     * @param array
      *	    the target float array
      * @return the taint tag
      */
@@ -361,7 +363,7 @@ public final class Taint {
     /**
      * Get the current taint tag from a double array.
      *
-     * @param array 
+     * @param array
      *	    the target double array
      * @return the taint tag
      */
@@ -380,7 +382,7 @@ public final class Taint {
      * Get the current taint tag from a primitive char.
      *
      * @param val
-     *	    the target char 
+     *	    the target char
      * @return the taint tag
      */
     native public static int getTaintChar(char val);
@@ -389,7 +391,7 @@ public final class Taint {
      * Get the current taint tag from a primitive byte.
      *
      * @param val
-     *	    the target byte 
+     *	    the target byte
      * @return the taint tag
      */
     native public static int getTaintByte(byte val);
@@ -398,7 +400,7 @@ public final class Taint {
      * Get the current taint tag from a primitive int.
      *
      * @param val
-     *	    the target int 
+     *	    the target int
      * @return the taint tag
      */
     native public static int getTaintInt(int val);
@@ -407,7 +409,7 @@ public final class Taint {
      * Get the current taint tag from a primitive short.
      *
      * @param val
-     *	    the target short 
+     *	    the target short
      * @return the taint tag
      */
     native public static int getTaintShort(short val);
@@ -416,7 +418,7 @@ public final class Taint {
      * Get the current taint tag from a primitive long.
      *
      * @param val
-     *	    the target long 
+     *	    the target long
      * @return the taint tag
      */
     native public static int getTaintLong(long val);
@@ -425,7 +427,7 @@ public final class Taint {
      * Get the current taint tag from a primitive float.
      *
      * @param val
-     *	    the target float 
+     *	    the target float
      * @return the taint tag
      */
     native public static int getTaintFloat(float val);
@@ -434,7 +436,7 @@ public final class Taint {
      * Get the current taint tag from a primitive double.
      *
      * @param val
-     *	    the target double 
+     *	    the target double
      * @return the taint tag
      */
     native public static int getTaintDouble(double val);
@@ -494,7 +496,7 @@ public final class Taint {
     native public static void logPeerFromFd(int fd);
     
     /**
-     * Logging utility to write large data into small chunks in json format 
+     * Logging utility to write large data into small chunks in json format
      *
      * @param fn
      *      parent function name which called this function
@@ -515,28 +517,13 @@ public final class Taint {
         {
             int iDataLen = byteCount - i < Taint.dataBytesToLog ? byteCount - i : Taint.dataBytesToLog;
             String dstr = new String((byte[]) buffer, offset + i, iDataLen );
-            byte[] ba = dstr.getBytes();
-            StringBuilder sb = new StringBuilder();
-            String mydata = null;
-            if (isHex == true)
-            {
-                for (byte b: ba) {
-                    sb.append(String.format("%02x", b & 0xff));
-                }
-                mydata = sb.toString();
-            }
-            else
-            {
-                mydata = dstr;
-            }
-
             String logData = null;
             try {
                 logData = new JSONObject()
                                 .put( "fn",   fn )
                                 .put( "fd",   fd )
                                 .put( "tag",  sTag )
-                                .put( "data", mydata )
+                                .put( "data",  isHex? HexDump.dumpHexString(dstr.getBytes()) : dstr )
                                 .put("hex", isHex)
                                 .toString();
             } catch (JSONException e) {
@@ -547,7 +534,7 @@ public final class Taint {
     }
     
     /**
-     * Logging utility to write large data into small chunks in JSON format 
+     * Logging utility to write large data into small chunks in JSON format
      *
      * @param fn
      *      parent function name which called this function
@@ -565,36 +552,42 @@ public final class Taint {
         {
             int iDataLen = data.length() - i < Taint.dataBytesToLog ? data.length() - i : Taint.dataBytesToLog;
             String dstr = data.substring(i, i + iDataLen);
-            byte[] ba = dstr.getBytes();
-            StringBuilder sb = new StringBuilder();
-            String mydata = null;
-            
-            if (isHex == true) {
-                for (byte b : ba)
-                {
-                    sb.append(String.format("%02x", b & 0xff));
-                }
-                mydata = sb.toString();
-            }
-            else
-            {
-                mydata = dstr;
-            }
             String logData = null;
             try {
                 logData = new JSONObject()
-                                .put( "fn",   fn )
-                                .put( "fd",   fd )
-                                .put( "tag",  sTag )
-                                .put( "data", mydata )
-                                .put("hex", isHex)
-                                .toString();
+                    .put( "fn",   fn )
+                    .put( "fd",   fd )
+                    .put( "tag",  sTag )
+                    .put( "data", isHex? HexDump.dumpHexString(dstr.getBytes()) : dstr  )
+                    .put("hex", isHex)
+                    .toString();
             } catch (JSONException e) {
                 e.printStackTrace();
             }
                             
             Taint.log( "Cloudacl:" + logData );
         }
+    }
+    /**
+     * Logging utility to write string data with a process id
+     *
+     * @param fn
+     *      function name
+     * @param data
+     *      data in string format
+     */
+    public static void log2(String fn, String data)
+    {
+        String logData = null;
+        try {
+            logData = new JSONObject()
+                    .put("fn", fn)
+                    .put("data", data)
+                    .toString();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        Taint.log("Cloudacl:" + logData);
     }
 }
 
