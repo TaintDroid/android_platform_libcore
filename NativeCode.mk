@@ -118,6 +118,11 @@ LOCAL_ADDITIONAL_DEPENDENCIES := $(LOCAL_PATH)/NativeCode.mk
 LOCAL_C_INCLUDES += external/stlport/stlport bionic/ bionic/libstdc++/include
 LOCAL_SHARED_LIBRARIES += libstlport
 
+# turn on taint tracking
+ifeq ($(WITH_TAINT_TRACKING),true)
+	LOCAL_CFLAGS += -DWITH_TAINT_TRACKING
+endif
+
 include $(BUILD_SHARED_LIBRARY)
 
 

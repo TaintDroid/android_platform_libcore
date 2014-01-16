@@ -1026,4 +1026,20 @@ public abstract class ByteBuffer extends Buffer implements Comparable<ByteBuffer
      * @return a sliced buffer that shares its content with this buffer.
      */
     public abstract ByteBuffer slice();
+
+// begin WITH_TAINT_TRACKING
+    public int getDirectByteBufferTaint() {
+        if (this.isDirect()) {
+            return this.block.getTaint();
+        } else {
+            return 0;
+        }
+    }
+    
+    public void addDirectByteBufferTaint(int tag) {
+        if (this.isDirect()) {
+            this.block.addTaint(tag);
+        }
+    }
+// end WITH_TAINT_TRACKING
 }

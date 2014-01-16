@@ -19,6 +19,10 @@ package java.lang;
 
 import java.io.Serializable;
 
+// begin WITH_TAINT_TRACKING
+import dalvik.system.Taint;
+// end WITH_TAINT_TRACKING
+
 /**
  * The wrapper for the primitive type {@code boolean}.
  *
@@ -103,6 +107,7 @@ public final class Boolean implements Serializable, Comparable<Boolean> {
     @Override
     @FindBugsSuppressWarnings("RC_REF_COMPARISON_BAD_PRACTICE_BOOLEAN")
     public boolean equals(Object o) {
+//TODO BEA: Handle implicit flow 
         return (o == this) || ((o instanceof Boolean) && (((Boolean) o).value == value));
     }
 
@@ -132,6 +137,7 @@ public final class Boolean implements Serializable, Comparable<Boolean> {
      * @hide 1.7
      */
     public static int compare(boolean lhs, boolean rhs) {
+//TODO BEA: Handle implicit flow
         return lhs == rhs ? 0 : lhs ? 1 : -1;
     }
 
@@ -143,6 +149,7 @@ public final class Boolean implements Serializable, Comparable<Boolean> {
      */
     @Override
     public int hashCode() {
+//TODO BEA: Handle implicit flow
         return value ? 1231 : 1237;
     }
 
@@ -187,7 +194,11 @@ public final class Boolean implements Serializable, Comparable<Boolean> {
      * @since 1.5
      */
     public static boolean parseBoolean(String s) {
-        return "true".equalsIgnoreCase(s);
+// begin WITH_TAINT_TRACKING
+		int tag = Taint.getTaintString(s);
+		return Taint.addTaintBoolean("true".equalsIgnoreCase(s), tag);
+//        return "true".equalsIgnoreCase(s);
+// end WITH_TAINT_TRACKING
     }
 
     /**
@@ -211,7 +222,10 @@ public final class Boolean implements Serializable, Comparable<Boolean> {
      * @see #parseBoolean(String)
      */
     public static Boolean valueOf(String string) {
-        return parseBoolean(string) ? Boolean.TRUE : Boolean.FALSE;
+// begin WITH_TAINT_TRACKING
+		return new Boolean(parseBoolean(string));	
+//        return parseBoolean(string) ? Boolean.TRUE : Boolean.FALSE;
+// end WITH_TAINT_TRACKING
     }
 
     /**
@@ -227,6 +241,9 @@ public final class Boolean implements Serializable, Comparable<Boolean> {
      *         {@code Boolean.FALSE} otherwise.
      */
     public static Boolean valueOf(boolean b) {
-        return b ? Boolean.TRUE : Boolean.FALSE;
+// begin WITH_TAINT_TRACKING (benandow)
+		return new Boolean(b);
+//        return b ? Boolean.TRUE : Boolean.FALSE;
+// begin WITH_TAINT_TRACKING
     }
 }

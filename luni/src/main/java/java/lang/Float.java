@@ -199,7 +199,14 @@ public final class Float extends Number implements Comparable<Float> {
      * float {@code value}. All <em>Not-a-Number (NaN)</em> values are converted to a single NaN
      * representation ({@code 0x7fc00000}) (compare to {@link #floatToRawIntBits}).
      */
-    public static native int floatToIntBits(float value);
+// begin WITH_TAINT_TRACKING
+    //public static native int floatToIntBits(float value);
+    public static native int floatToIntBits_intrinsic(float value);
+    
+    public static int floatToIntBits(float value) {
+        return floatToIntBits_intrinsic(value);
+    }
+// end WITH_TAINT_TRACKING
 
     /**
      * Returns an integer corresponding to the bits of the given
@@ -207,7 +214,14 @@ public final class Float extends Number implements Comparable<Float> {
      * float {@code value}. <em>Not-a-Number (NaN)</em> values are preserved (compare
      * to {@link #floatToIntBits}).
      */
-    public static native int floatToRawIntBits(float value);
+// begin WITH_TAINT_TRACKING
+    //public static native int floatToRawIntBits(float value);
+    public static native int floatToRawIntBits_intrinsic(float value);
+    
+    public static int floatToRawIntBits(float value) {
+        return floatToRawIntBits_intrinsic(value);
+    }
+// end WITH_TAINT_TRACKING
 
     /**
      * Gets the primitive value of this float.
@@ -228,7 +242,14 @@ public final class Float extends Number implements Comparable<Float> {
      * Returns the <a href="http://en.wikipedia.org/wiki/IEEE_754-1985">IEEE 754</a>
      * single precision float corresponding to the given {@code bits}.
      */
-    public static native float intBitsToFloat(int bits);
+// begin WITH_TAINT_TRACKING
+    public static native float intBitsToFloat_intrinsic(int bits);
+    //public static native float intBitsToFloat(int bits);
+    
+    public static float intBitsToFloat(int bits) {
+        return intBitsToFloat_intrinsic(bits);
+    }
+// end WITH_TAINT_TRACKING
 
     @Override
     public int intValue() {

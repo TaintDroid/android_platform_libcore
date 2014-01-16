@@ -459,7 +459,10 @@ static void Posix_close(JNIEnv* env, jobject, jobject javaFd) {
     throwIfMinusOne(env, "close", close(fd));
 }
 
-static void Posix_connect(JNIEnv* env, jobject, jobject javaFd, jobject javaAddress, jint port) {
+// begin WITH_TAINT_TRACKING
+//static void Posix_connect(JNIEnv* env, jobject, jobject javaFd, jobject javaAddress, jint port) {
+static void Posix_connectImpl(JNIEnv* env, jobject, jobject javaFd, jobject javaAddress, jint port) {
+// end WITH_TAINT_TRACKING
     sockaddr_storage ss;
     socklen_t sa_len;
     if (!inetAddressToSockaddr(env, javaAddress, port, ss, sa_len)) {
@@ -904,7 +907,21 @@ static void Posix_mkdir(JNIEnv* env, jobject, jstring javaPath, jint mode) {
     if (path.c_str() == NULL) {
         return;
     }
+#ifdef WITH_TAINT_TRACKING
+    // In case the SDcard is ext2, make sure it is 777
+    if ((strncmp(path.c_str(), "/sdcard", sizeof("/sdcard")-1) == 0) ||
+         (strncmp(path.c_str(), "/mnt/sdcard", sizeof("/mnt/sdcard")-1)==0) ||
+         (strncmp(path.c_str(), "/storage/sdcard", sizeof("/storage/sdcard")-1)==0)) {
+        //return (mkdir(path.c_str(), S_IRWXU|S_IRWXG|S_IRWXO) == 0);
+        throwIfMinusOne(env, "mkdir", TEMP_FAILURE_RETRY(mkdir(path.c_str(), S_IRWXU|S_IRWXG|S_IRWXO)));
+    } else if (strncmp(path.c_str(), "/data/taintwall", 15) == 0) {
+        throwIfMinusOne(env, "mkdir", TEMP_FAILURE_RETRY(mkdir(path.c_str(), S_IRWXU|S_IRWXG|S_IRWXO)));
+    } else {
+        throwIfMinusOne(env, "mkdir", TEMP_FAILURE_RETRY(mkdir(path.c_str(), mode)));
+    }
+#else
     throwIfMinusOne(env, "mkdir", TEMP_FAILURE_RETRY(mkdir(path.c_str(), mode)));
+#endif
 }
 
 static void Posix_mlock(JNIEnv* env, jobject, jlong address, jlong byteCount) {
@@ -942,6 +959,20 @@ static jobject Posix_open(JNIEnv* env, jobject, jstring javaPath, jint flags, ji
     if (path.c_str() == NULL) {
         return NULL;
     }
+#ifdef WITH_TAINT_TRACKING
+    // Ensure /sdcard always acts like FAT, even if it is ext2
+    if ((strncmp(path.c_str(), "/sdcard", sizeof("/sdcard")-1) == 0) ||
+         (strncmp(path.c_str(), "/mnt/sdcard", sizeof("/mnt/sdcard")-1)==0) ||
+         (strncmp(path.c_str(), "/storage/sdcard", sizeof("/storage/sdcard")-1)==0)) {
+    	mode = 0777;
+    }
+
+    // Tuan: change permission of every file in this folder, so everyone can read, but just the owner can write
+    // maybe we need to verify the app name as well, just "taintwall" can modify here
+    if ((strncmp(path.c_str(), "/data/taintwall/", 16) == 0)) {
+        mode = 0644;
+    } 
+#endif
     int fd = throwIfMinusOne(env, "open", TEMP_FAILURE_RETRY(open(path.c_str(), flags, mode)));
     return fd != -1 ? jniCreateFileDescriptor(env, fd) : NULL;
 }
@@ -1016,7 +1047,10 @@ static jint Posix_poll(JNIEnv* env, jobject, jobjectArray javaStructs, jint time
     return rc;
 }
 
-static jint Posix_preadBytes(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount, jlong offset) {
+// begin WITH_TAINT_TRACKING
+//static jint Posix_preadBytes(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount, jlong offset) {
+static jint Posix_preadBytesImpl(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount, jlong offset) {
+// end WITH_TAINT_TRACKING
     ScopedBytesRW bytes(env, javaBytes);
     if (bytes.get() == NULL) {
         return -1;
@@ -1025,7 +1059,10 @@ static jint Posix_preadBytes(JNIEnv* env, jobject, jobject javaFd, jobject javaB
     return throwIfMinusOne(env, "pread", TEMP_FAILURE_RETRY(pread64(fd, bytes.get() + byteOffset, byteCount, offset)));
 }
 
-static jint Posix_pwriteBytes(JNIEnv* env, jobject, jobject javaFd, jbyteArray javaBytes, jint byteOffset, jint byteCount, jlong offset) {
+// begin WITH_TAINT_TRACKING
+//static jint Posix_pwriteBytes(JNIEnv* env, jobject, jobject javaFd, jbyteArray javaBytes, jint byteOffset, jint byteCount, jlong offset) {
+static jint Posix_pwriteBytesImpl(JNIEnv* env, jobject, jobject javaFd, jbyteArray javaBytes, jint byteOffset, jint byteCount, jlong offset) {
+// end WITH_TAINT_TRACKING
     ScopedBytesRO bytes(env, javaBytes);
     if (bytes.get() == NULL) {
         return -1;
@@ -1034,7 +1071,10 @@ static jint Posix_pwriteBytes(JNIEnv* env, jobject, jobject javaFd, jbyteArray j
     return throwIfMinusOne(env, "pwrite", TEMP_FAILURE_RETRY(pwrite64(fd, bytes.get() + byteOffset, byteCount, offset)));
 }
 
-static jint Posix_readBytes(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount) {
+// begin WITH_TAINT_TRACKING
+//static jint Posix_readBytes(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount) {
+static jint Posix_readBytesImpl(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount) {
+// end WITH_TAINT_TRACKING
     ScopedBytesRW bytes(env, javaBytes);
     if (bytes.get() == NULL) {
         return -1;
@@ -1105,7 +1145,10 @@ static jlong Posix_sendfile(JNIEnv* env, jobject, jobject javaOutFd, jobject jav
     return result;
 }
 
-static jint Posix_sendtoBytes(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount, jint flags, jobject javaInetAddress, jint port) {
+// begin WITH_TAINT_TRACKING
+//static jint Posix_sendtoBytes(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount, jint flags, jobject javaInetAddress, jint port) {
+static jint Posix_sendtoBytesImpl(JNIEnv* env, jobject, jobject javaFd, jobject javaBytes, jint byteOffset, jint byteCount, jint flags, jobject javaInetAddress, jint port) {
+// end WITH_TAINT_TRACKING
     ScopedBytesRO bytes(env, javaBytes);
     if (bytes.get() == NULL) {
         return -1;
@@ -1346,7 +1389,10 @@ static jint Posix_waitpid(JNIEnv* env, jobject, jint pid, jobject javaStatus, ji
     return rc;
 }
 
-static jint Posix_writeBytes(JNIEnv* env, jobject, jobject javaFd, jbyteArray javaBytes, jint byteOffset, jint byteCount) {
+/// begin WITH_TAINT_TRACKING
+//static jint Posix_writeBytes(JNIEnv* env, jobject, jobject javaFd, jbyteArray javaBytes, jint byteOffset, jint byteCount) {
+static jint Posix_writeBytesImpl(JNIEnv* env, jobject, jobject javaFd, jbyteArray javaBytes, jint byteOffset, jint byteCount) {
+// end WITH_TAINT_TRACKING
     ScopedBytesRO bytes(env, javaBytes);
     if (bytes.get() == NULL) {
         return -1;
@@ -1371,7 +1417,10 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(Posix, chmod, "(Ljava/lang/String;I)V"),
     NATIVE_METHOD(Posix, chown, "(Ljava/lang/String;II)V"),
     NATIVE_METHOD(Posix, close, "(Ljava/io/FileDescriptor;)V"),
-    NATIVE_METHOD(Posix, connect, "(Ljava/io/FileDescriptor;Ljava/net/InetAddress;I)V"),
+    // begin WITH_TAINT_TRACKING
+    //NATIVE_METHOD(Posix, connect, "(Ljava/io/FileDescriptor;Ljava/net/InetAddress;I)V"),
+    NATIVE_METHOD(Posix, connectImpl, "(Ljava/io/FileDescriptor;Ljava/net/InetAddress;I)V"),
+// end WITH_TAINT_TRACKING
     NATIVE_METHOD(Posix, dup, "(Ljava/io/FileDescriptor;)Ljava/io/FileDescriptor;"),
     NATIVE_METHOD(Posix, dup2, "(Ljava/io/FileDescriptor;I)Ljava/io/FileDescriptor;"),
     NATIVE_METHOD(Posix, environ, "()[Ljava/lang/String;"),
@@ -1427,15 +1476,23 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(Posix, open, "(Ljava/lang/String;II)Ljava/io/FileDescriptor;"),
     NATIVE_METHOD(Posix, pipe, "()[Ljava/io/FileDescriptor;"),
     NATIVE_METHOD(Posix, poll, "([Llibcore/io/StructPollfd;I)I"),
-    NATIVE_METHOD(Posix, preadBytes, "(Ljava/io/FileDescriptor;Ljava/lang/Object;IIJ)I"),
-    NATIVE_METHOD(Posix, pwriteBytes, "(Ljava/io/FileDescriptor;Ljava/lang/Object;IIJ)I"),
-    NATIVE_METHOD(Posix, readBytes, "(Ljava/io/FileDescriptor;Ljava/lang/Object;II)I"),
+// begin WITH_TAINT_TRACKING
+    //NATIVE_METHOD(Posix, preadBytes, "(Ljava/io/FileDescriptor;Ljava/lang/Object;IIJ)I"),
+    //NATIVE_METHOD(Posix, pwriteBytes, "(Ljava/io/FileDescriptor;Ljava/lang/Object;IIJ)I"),
+    //NATIVE_METHOD(Posix, readBytes, "(Ljava/io/FileDescriptor;Ljava/lang/Object;II)I"),
+    NATIVE_METHOD(Posix, preadBytesImpl, "(Ljava/io/FileDescriptor;Ljava/lang/Object;IIJ)I"),
+    NATIVE_METHOD(Posix, pwriteBytesImpl, "(Ljava/io/FileDescriptor;Ljava/lang/Object;IIJ)I"),
+    NATIVE_METHOD(Posix, readBytesImpl, "(Ljava/io/FileDescriptor;Ljava/lang/Object;II)I"),
+// end WITH_TAINT_TRACKING
     NATIVE_METHOD(Posix, readv, "(Ljava/io/FileDescriptor;[Ljava/lang/Object;[I[I)I"),
     NATIVE_METHOD(Posix, recvfromBytes, "(Ljava/io/FileDescriptor;Ljava/lang/Object;IIILjava/net/InetSocketAddress;)I"),
     NATIVE_METHOD(Posix, remove, "(Ljava/lang/String;)V"),
     NATIVE_METHOD(Posix, rename, "(Ljava/lang/String;Ljava/lang/String;)V"),
     NATIVE_METHOD(Posix, sendfile, "(Ljava/io/FileDescriptor;Ljava/io/FileDescriptor;Llibcore/util/MutableLong;J)J"),
-    NATIVE_METHOD(Posix, sendtoBytes, "(Ljava/io/FileDescriptor;Ljava/lang/Object;IIILjava/net/InetAddress;I)I"),
+// begin WITH_TAINT_TRACKING
+    //NATIVE_METHOD(Posix, sendtoBytes, "(Ljava/io/FileDescriptor;Ljava/lang/Object;IIILjava/net/InetAddress;I)I"),
+    NATIVE_METHOD(Posix, sendtoBytesImpl, "(Ljava/io/FileDescriptor;Ljava/lang/Object;IIILjava/net/InetAddress;I)I"),
+// end WITH_TAINT_TRACKING
     NATIVE_METHOD(Posix, setegid, "(I)V"),
     NATIVE_METHOD(Posix, setenv, "(Ljava/lang/String;Ljava/lang/String;Z)V"),
     NATIVE_METHOD(Posix, seteuid, "(I)V"),
@@ -1464,7 +1521,10 @@ static JNINativeMethod gMethods[] = {
     NATIVE_METHOD(Posix, uname, "()Llibcore/io/StructUtsname;"),
     NATIVE_METHOD(Posix, unsetenv, "(Ljava/lang/String;)V"),
     NATIVE_METHOD(Posix, waitpid, "(ILlibcore/util/MutableInt;I)I"),
-    NATIVE_METHOD(Posix, writeBytes, "(Ljava/io/FileDescriptor;Ljava/lang/Object;II)I"),
+// begin WITH_TAINT_TRACKING
+    //NATIVE_METHOD(Posix, writeBytes, "(Ljava/io/FileDescriptor;Ljava/lang/Object;II)I"),
+    NATIVE_METHOD(Posix, writeBytesImpl, "(Ljava/io/FileDescriptor;Ljava/lang/Object;II)I"),
+// end WITH_TAINT_TRACKING
     NATIVE_METHOD(Posix, writev, "(Ljava/io/FileDescriptor;[Ljava/lang/Object;[I[I)I"),
 };
 void register_libcore_io_Posix(JNIEnv* env) {

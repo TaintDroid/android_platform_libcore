@@ -19,6 +19,10 @@ package java.lang;
 
 import libcore.math.MathUtils;
 
+// begin WITH_TAINT_TRACKING
+import dalvik.system.Taint;
+// end WITH_TAINT_TRACKING
+
 final class RealToString {
     private static final ThreadLocal<RealToString> INSTANCE = new ThreadLocal<RealToString>() {
         @Override protected RealToString initialValue() {
@@ -64,6 +68,9 @@ final class RealToString {
     }
 
     private String convertDouble(AbstractStringBuilder sb, double inputNumber) {
+// begin WITH_TAINT_TRACKING
+    	int tag = Taint.getTaintDouble(inputNumber);
+// end WITH_TAINT_TRACKING
         long inputNumberBits = Double.doubleToRawLongBits(inputNumber);
         boolean positive = (inputNumberBits & Double.SIGN_MASK) == 0;
         int e = (int) ((inputNumberBits & Double.EXPONENT_MASK) >> Double.MANTISSA_BITS);
@@ -86,6 +93,11 @@ final class RealToString {
             }
         }
         if (quickResult != null) {
+// begin WITH_TAINT_TRACKING
+            if (tag != Taint.TAINT_CLEAR) {
+                Taint.addTaintString(quickResult, tag);
+            }
+// end WITH_TAINT_TRACKING	
             return resultOrSideEffect(sb, quickResult);
         }
 
@@ -119,7 +131,16 @@ final class RealToString {
         } else {
             freeFormat(dst, positive);
         }
-        return (sb != null) ? null : dst.toString();
+
+// begin WITH_TAINT_TRACKING
+        if (tag != Taint.TAINT_CLEAR) {
+            String ts = dst.toString();
+            Taint.addTaintString(ts, tag);
+            return (sb != null) ? null : ts;
+        } else {
+            return (sb != null) ? null : dst.toString();
+        }
+// end WITH_TAINT_TRACKING
     }
 
     public String floatToString(float f) {
@@ -131,6 +152,9 @@ final class RealToString {
     }
 
     public String convertFloat(AbstractStringBuilder sb, float inputNumber) {
+// begin WITH_TAINT_TRACKING
+        int tag = Taint.getTaintFloat(inputNumber);
+// end WITH_TAINT_TRACKING
         int inputNumberBits = Float.floatToRawIntBits(inputNumber);
         boolean positive = (inputNumberBits & Float.SIGN_MASK) == 0;
         int e = (inputNumberBits & Float.EXPONENT_MASK) >> Float.MANTISSA_BITS;
@@ -148,6 +172,11 @@ final class RealToString {
             quickResult = positive ? "0.0" : "-0.0";
         }
         if (quickResult != null) {
+// begin WITH_TAINT_TRACKING
+            if (tag != Taint.TAINT_CLEAR) {
+                Taint.addTaintString(quickResult, tag);
+            }
+// end WITH_TAINT_TRACKING	
             return resultOrSideEffect(sb, quickResult);
         }
 
@@ -185,7 +214,15 @@ final class RealToString {
         } else {
             freeFormat(dst, positive);
         }
-        return (sb != null) ? null : dst.toString();
+// begin WITH_TAINT_TRACKING
+        if (tag != Taint.TAINT_CLEAR) {
+            String ts = dst.toString();
+            Taint.addTaintString(ts, tag);
+            return (sb != null) ? null : ts;
+        } else {
+            return (sb != null) ? null : dst.toString();
+        }
+// end WITH_TAINT_TRACKING
     }
 
     private void freeFormatExponential(AbstractStringBuilder sb, boolean positive) {

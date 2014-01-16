@@ -171,7 +171,14 @@ public final class Double extends Number implements Comparable<Double> {
      * {@code value}. All <em>Not-a-Number (NaN)</em> values are converted to a single NaN
      * representation ({@code 0x7ff8000000000000L}) (compare to {@link #doubleToRawLongBits}).
      */
-    public static native long doubleToLongBits(double value);
+// begin WITH_TAINT_TRACKING
+    //public static native long doubleToLongBits(double value);
+    public static native long doubleToLongBits_intrinsic(double value);
+    
+    public static long doubleToLongBits(double value) {
+        return doubleToLongBits_intrinsic(value);
+    }
+// end WITH_TAINT_TRACKING
 
     /**
      * Returns an integer corresponding to the bits of the given
@@ -179,7 +186,14 @@ public final class Double extends Number implements Comparable<Double> {
      * {@code value}. <em>Not-a-Number (NaN)</em> values are preserved (compare
      * to {@link #doubleToLongBits}).
      */
-    public static native long doubleToRawLongBits(double value);
+// begin WITH_TAINT_TRACKING
+    //public static native long doubleToRawLongBits(double value);
+    public static native long doubleToRawLongBits_intrinsic(double value);
+    
+    public static long doubleToRawLongBits(double value) {
+        return doubleToRawLongBits_intrinsic(value);
+    }
+// end WITH_TAINT_TRACKING
 
     /**
      * Gets the primitive value of this double.
@@ -275,7 +289,14 @@ public final class Double extends Number implements Comparable<Double> {
      * Returns the <a href="http://en.wikipedia.org/wiki/IEEE_754-1985">IEEE 754</a>
      * double precision float corresponding to the given {@code bits}.
      */
-    public static native double longBitsToDouble(long bits);
+// begin WITH_TAINT_TRACKING
+    //public static native double longBitsToDouble(long bits);
+    public static native double longBitsToDouble_intrinsic(long bits);
+    
+    public static double longBitsToDouble(long bits) {
+        return longBitsToDouble_intrinsic(bits);
+    }
+// end WITH_TAINT_TRACKING
 
     @Override
     public long longValue() {
